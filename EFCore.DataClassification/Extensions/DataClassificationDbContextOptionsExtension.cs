@@ -6,11 +6,10 @@ using System.Collections.Generic;
 
 namespace EFCore.DataClassification {
 
-    // Bu sınıf, EF Core'a bizim yazdığımız eklentiyi tanıtan "kimlik kartı"dır.
+
     public class DataClassificationDbContextOptionsExtension : IDbContextOptionsExtension {
         public void ApplyServices(IServiceCollection services) {
-            // İŞTE SİHİRLİ SATIR:
-            // Standart IMigrationsSqlGenerator servisini, bizim yazdığımız DataClassificationSqlGenerator ile değiştiriyoruz.
+            
             services.AddScoped<IMigrationsSqlGenerator, DataClassificationSqlGenerator>();
         }
 

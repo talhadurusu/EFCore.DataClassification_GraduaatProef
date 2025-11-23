@@ -17,15 +17,14 @@ namespace EFCore.DataClassification.Infrastructure {
             IModel? model,
             MigrationCommandListBuilder builder,
             bool terminate = true) {
-            // önce normal CREATE TABLE
+            
             base.Generate(operation, model, builder, terminate);
 
-            // sonra kolonlar üzerinden dönüp SENSITIVITY ekle
+           
             foreach (var column in operation.Columns) {
                 ProcessColumn(column, operation.Schema, operation.Name, builder);
             }
         }
-
         private void ProcessColumn(
             ColumnOperation column,
             string? schema,
@@ -58,7 +57,6 @@ namespace EFCore.DataClassification.Infrastructure {
                 .AppendLine(Dependencies.SqlGenerationHelper.StatementTerminator);
         }
 
-        
         private string GenerateStringLiteral(string? value) {
             if (value == null) {
                 return "NULL";

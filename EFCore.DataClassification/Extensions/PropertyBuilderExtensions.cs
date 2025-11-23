@@ -5,9 +5,7 @@ using EFCore.DataClassification.Constants;
 namespace EFCore.DataClassification.Extensions;
 
 public static class PropertyBuilderExtensions {
-    // 1. ORTAK MANTIK (Private Metod)
-    // Kod tekrarını önlemek için asıl işi yapan metodu buraya ayırdık.
-    // PropertyBuilder<TProperty>, PropertyBuilder'dan türediği için parametre olarak onu kabul eder.
+   
     private static void SetClassificationAnnotations( PropertyBuilder builder,string label,string informationType,
         SensitivityRank rank) {
         builder.HasAnnotation(DataClassificationConstants.Label, label);
