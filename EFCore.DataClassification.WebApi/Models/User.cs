@@ -17,11 +17,14 @@ namespace EFCore.DataClassification.WebApi.Models {
 
         // TEST 1: Attribute Yöntemi
         // Bu kolona "Kritik" damgası vuruyoruz
-        [DataClassification("Private", "Contact Info", SensitivityRank.Critical)]
+        [DataClassification("Public", "Contact Info", SensitivityRank.Critical)]
         public string Email { get; set; }
 
         // TEST 2: Fluent API Yöntemi
         // Buna attribute koymuyoruz, birazdan DbContext'te kodla ekleyeceğiz.
         public string PhoneNumber { get; set; }
+
+        [DataClassification("Confidential", "Financial Info", SensitivityRank.Medium)]
+        public int Salary { get; set; }
     }
 }
