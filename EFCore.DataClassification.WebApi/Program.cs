@@ -1,3 +1,8 @@
+﻿using EFCore.DataClassification.Extensions;
+using EFCore.DataClassification.Infrastructure;
+using EFCore.DataClassification.WebApi;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace EFCore.DataClassification.WebApi {
     public class Program {
@@ -6,6 +11,13 @@ namespace EFCore.DataClassification.WebApi {
 
             // Add services to the container.
 
+            var connectionString = "Server=.\\SQLEXPRESS;Database=EF_core_Try_V5;Trusted_Connection=True;MultipleActiveResultSets=True;App=Example;Encrypt=False";
+            builder.Services.AddDbContext<AppDbContext>(options =>
+            {
+                options.UseSqlServer(connectionString)
+                        .ReplaceService<IMigrationsSqlGenerator, DataClassificationSqlGenerator>();
+
+            });
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

@@ -6,7 +6,8 @@ namespace EFCore.DataClassification.Extensions {
 
       
         public static DbContextOptionsBuilder UseDataClassification(this DbContextOptionsBuilder optionsBuilder) {
-            var extension = optionsBuilder.Options.FindExtension<DataClassificationDbContextOptionsExtension>()
+            var extension = optionsBuilder.Options.FindExtension<
+                DataClassificationDbContextOptionsExtension>()
                             ?? new DataClassificationDbContextOptionsExtension();
 
             ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);

@@ -32,9 +32,9 @@ namespace EFCore.DataClassification.Extensions {
 
                     if (attribute != null) {
                        
-                        property.AddAnnotation(DataClassificationConstants.Label, attribute.Label);
-                        property.AddAnnotation(DataClassificationConstants.InformationType, attribute.InformationType);
-                        property.AddAnnotation(DataClassificationConstants.Rank, attribute.Rank);
+                        property.SetAnnotation(DataClassificationConstants.Label, attribute.Label);
+                        property.SetAnnotation(DataClassificationConstants.InformationType, attribute.InformationType);
+                        property.SetAnnotation(DataClassificationConstants.Rank, attribute.Rank);
                     }
                 }
             }
