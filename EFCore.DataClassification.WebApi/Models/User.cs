@@ -23,8 +23,7 @@ namespace EFCore.DataClassification.WebApi.Models {
         // TEST 2: Fluent API Yöntemi
         // Buna attribute koymuyoruz, birazdan DbContext'te kodla ekleyeceğiz.
         public string PhoneNumber { get; set; }
-
-        [DataClassification("Confidential", "Financial Info", SensitivityRank.Medium)]
+        [DataClassification("blablabla", "Salary blabla", SensitivityRank.High)]
         public int Salary { get; set; }
     }
 }

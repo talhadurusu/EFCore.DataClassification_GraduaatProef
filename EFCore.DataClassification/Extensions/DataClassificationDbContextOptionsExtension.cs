@@ -10,6 +10,7 @@ namespace EFCore.DataClassification.Extensions {
         public void ApplyServices(IServiceCollection services) {
     
             services.AddScoped<IMigrationsSqlGenerator, DataClassificationSqlGenerator>();
+            services.AddScoped<IMigrationsModelDiffer, DataClassificationMigrationsModelDiffer>();
         }
 
         public DbContextOptionsExtensionInfo Info => new ExtensionInfo(this);
