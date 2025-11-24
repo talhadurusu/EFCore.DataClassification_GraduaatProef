@@ -11,11 +11,11 @@ namespace EFCore.DataClassification.WebApi {
 
             // Add services to the container.
 
-            var connectionString = "Server=.\\SQLEXPRESS;Database=EF_core_Try_V5;Trusted_Connection=True;MultipleActiveResultSets=True;App=Example;Encrypt=False";
+            var connectionString = "Server=.\\SQLEXPRESS;Database=EF_core_Try_V6;Trusted_Connection=True;MultipleActiveResultSets=True;App=Example;Encrypt=False";
             builder.Services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseSqlServer(connectionString)
-                        .ReplaceService<IMigrationsSqlGenerator, DataClassificationSqlGenerator>();
+                        .UseDataClassificationSqlServer();
 
             });
             builder.Services.AddControllers();

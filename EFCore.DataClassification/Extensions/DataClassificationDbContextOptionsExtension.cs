@@ -8,8 +8,7 @@ using System.Collections.Generic;
 namespace EFCore.DataClassification.Extensions {
     public class DataClassificationDbContextOptionsExtension : IDbContextOptionsExtension {
         public void ApplyServices(IServiceCollection services) {
-            // EF Core'un varsayılan SQL Generator'ını kaldır ve bizimkini ekle
-            services.RemoveAll<IMigrationsSqlGenerator>();
+    
             services.AddScoped<IMigrationsSqlGenerator, DataClassificationSqlGenerator>();
         }
 

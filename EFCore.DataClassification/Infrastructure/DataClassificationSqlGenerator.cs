@@ -96,7 +96,9 @@ namespace EFCore.DataClassification.Infrastructure {
             string tableName,
             string columnName,
             IProperty property) {
-            var schemaName = string.IsNullOrEmpty(schema) ? "dbo" : schema;
+
+
+            var schemaName = schema ?? "dbo";
 
             // Annotation'lardan değerleri oku
             var label = property.FindAnnotation(DataClassificationConstants.Label)?.Value?.ToString();
@@ -122,7 +124,7 @@ namespace EFCore.DataClassification.Infrastructure {
                     DataClassificationConstants.Rank, rank);
             }
 
-            // 2) SQL Server 2019+ resmi metadata
+            // 2) SQL Server 
             AppendSensitivityClassification(
                 builder, schemaName, tableName, columnName,
                 label, infoType, rank);
@@ -155,52 +157,48 @@ namespace EFCore.DataClassification.Infrastructure {
             string columnName,
             string? label,
             string? informationType,
-            string? rank) {
+            string? rankString) {
             // Hiç veri yoksa boşuna SQL üretme
             if (string.IsNullOrWhiteSpace(label)
                 && string.IsNullOrWhiteSpace(informationType)
-                && string.IsNullOrWhiteSpace(rank)) {
+                && string.IsNullOrWhiteSpace(rankString)) {
                 return;
             }
 
-            // Rank -> SQL'in beklediği formata çevir (LOW, MEDIUM, HIGH, CRITICAL...)
+            // could fix directly
             string? sqlRank = null;
-            if (!string.IsNullOrWhiteSpace(rank)) {
-                sqlRank = rank.ToUpperInvariant(); // SensitivityRank.High -> "HIGH"
+            if (!string.IsNullOrWhiteSpace(rankString)) {
+               
+                sqlRank = rankString switch {
+                    "Low" => "LOW",
+                    "Medium" => "MEDIUM",
+                    "High" => "HIGH",
+                    "Critical" => "CRITICAL",
+                    _ => "LOW" 
+                };
             }
 
             var helper = Dependencies.SqlGenerationHelper;
 
-            builder.Append("ADD SENSITIVITY CLASSIFICATION TO ")
-                .Append(helper.DelimitIdentifier(tableName, schemaName))
-                .Append(".")
-                .Append(helper.DelimitIdentifier(columnName))
-                .AppendLine()
-                .Append("WITH (");
+            builder.Append($"ADD SENSITIVITY CLASSIFICATION TO {helper.DelimitIdentifier(tableName, schemaName)}.{helper.DelimitIdentifier(columnName)}")
+                    .AppendLine()
+                    .Append("WITH (");
 
-            var first = true;
+            var parts = new List<string>();
 
             if (!string.IsNullOrWhiteSpace(label)) {
-                builder.Append("LABEL = N'")
-                       .Append(label.Replace("'", "''"))
-                       .Append("'");
-                first = false;
+                parts.Add($"LABEL = N'{label.Replace("'", "''")}'");
             }
 
             if (!string.IsNullOrWhiteSpace(informationType)) {
-                if (!first) builder.Append(", ");
-                builder.Append("INFORMATION_TYPE = N'")
-                       .Append(informationType.Replace("'", "''"))
-                       .Append("'");
-                first = false;
+                parts.Add($"INFORMATION_TYPE = N'{informationType.Replace("'", "''")}'");
             }
 
             if (!string.IsNullOrWhiteSpace(sqlRank)) {
-                if (!first) builder.Append(", ");
-                builder.Append("RANK = ")
-                       .Append(sqlRank);
+                parts.Add($"RANK = {sqlRank}");
             }
 
+            builder.Append(string.Join(", ", parts));
             builder.Append(");")
                    .EndCommand();
         }
