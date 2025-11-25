@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251124104137_lastsqlgenerator")]
-    partial class lastsqlgenerator
+    [Migration("20251124195251_adresschange")]
+    partial class adresschange
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -74,7 +74,7 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("DataClassification:InformationType", "Contact Info")
-                        .HasAnnotation("DataClassification:Label", "Private")
+                        .HasAnnotation("DataClassification:Label", "Public")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
 
                     b.Property<string>("Name")
@@ -86,6 +86,12 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("DataClassification:InformationType", "Phone Number")
                         .HasAnnotation("DataClassification:Label", "Internal")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
+
+                    b.Property<int>("Salary")
+                        .HasColumnType("int")
+                        .HasAnnotation("DataClassification:InformationType", "Salary blabla")
+                        .HasAnnotation("DataClassification:Label", "blablabla")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
                     b.Property<string>("Surname")

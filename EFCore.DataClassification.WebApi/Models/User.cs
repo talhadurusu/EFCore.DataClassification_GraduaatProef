@@ -12,7 +12,7 @@ namespace EFCore.DataClassification.WebApi.Models {
 
         // TEST 1: Attribute Yöntemi
         // Bu kolona "low" damgası vuruyoruz
-        [DataClassification("Private", "Contact Info", SensitivityRank.Low)]
+        [DataClassification("Private", "huis adress", SensitivityRank.Medium)]
         public string Adress { get; set; }
 
         // TEST 1: Attribute Yöntemi
