@@ -29,7 +29,7 @@ namespace EFCore.DataClassification.Infrastructure {
                 rowIdentityMapFactory,
                 commandBatchPreparerDependencies) {
         }
-#pragma warning restore EF1001 // Internal EF Core API usage.
+#pragma warning restore EF1001 
 
         protected override IEnumerable<MigrationOperation> Diff(
             IColumn source,

@@ -18,7 +18,7 @@ public class AppDbContext : DbContext {
         // 1. Senin kütüphaneni çalıştır (Attribute tarayıcı)
         modelBuilder.UseDataClassification();
 
-        // 2. Fluent API Testi
+      // 2.Fluent API Testi
         modelBuilder.Entity<User>()
             .Property(u => u.PhoneNumber)
             .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);

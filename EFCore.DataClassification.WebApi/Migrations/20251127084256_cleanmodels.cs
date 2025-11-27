@@ -5,7 +5,7 @@
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     /// <inheritdoc />
-    public partial class cleanmigration : Migration
+    public partial class cleanmodels : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
