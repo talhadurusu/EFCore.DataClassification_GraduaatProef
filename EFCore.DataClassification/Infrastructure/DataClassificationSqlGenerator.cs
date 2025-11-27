@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using EFCore.DataClassification.Constants;
+using EFCore.DataClassification.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -16,21 +17,22 @@ namespace EFCore.DataClassification.Infrastructure {
     /// metadata'sını (ADD SENSITIVITY CLASSIFICATION) üreten generator.
     /// </summary>
     public sealed class DataClassificationSqlGenerator : SqlServerMigrationsSqlGenerator {
+
+        #region Ctor
         public DataClassificationSqlGenerator(
             MigrationsSqlGeneratorDependencies dependencies,
             ICommandBatchPreparer commandBatchPreparer)
             : base(dependencies, commandBatchPreparer) {
         }
+        #endregion
 
-    
+
+        #region Generate overrides (Create / Add / Alter / Drop)
+
         // 1) CREATE TABLE
-        
-        protected override void Generate(
-            CreateTableOperation operation,
-            IModel? model,
-            MigrationCommandListBuilder builder,
-            bool terminate = true) {
-            // Önce normal CREATE TABLE
+
+        protected override void Generate(CreateTableOperation operation,IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
+         
             base.Generate(operation, model, builder, terminate);
 
             if (model is null)
@@ -62,11 +64,7 @@ namespace EFCore.DataClassification.Infrastructure {
         
         // 2) ADD COLUMN
     
-        protected override void Generate(
-            AddColumnOperation operation,
-            IModel? model,
-            MigrationCommandListBuilder builder,
-            bool terminate = true) {
+        protected override void Generate(AddColumnOperation operation, IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
             // Önce normal ALTER TABLE ADD
             base.Generate(operation, model, builder, terminate);
 
@@ -94,16 +92,9 @@ namespace EFCore.DataClassification.Infrastructure {
                 property);
         }
 
-    
+
         // 3) ALTER COLUMN
-        //    (tip değişimi, nullable değişimi,
-        //     annotation değişimi vs.)
-        
-       
-        protected override void Generate(
-            AlterColumnOperation operation,
-            IModel? model,
-            MigrationCommandListBuilder builder) {
+        protected override void Generate(AlterColumnOperation operation,IModel? model,MigrationCommandListBuilder builder) {
             // Önce normal ALTER COLUMN
             base.Generate(operation, model, builder);
 
@@ -139,38 +130,32 @@ namespace EFCore.DataClassification.Infrastructure {
 
 
         // 4) DROP COLUMN
-        //    (kolon silinirken önce
-        //     classification metadata'yı temizle)
      
-        protected override void Generate(
-            DropColumnOperation operation,
-            IModel? model,
-            MigrationCommandListBuilder builder,
-            bool terminate = true) {
+        protected override void Generate(DropColumnOperation operation,IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
             var schemaName = operation.Schema ?? "dbo";
 
             // Kolon düşmeden önce classification metadata'yı temizle
-            ClearDataClassification(builder, schemaName, operation.Table, operation.Name);
+            ClearDataClassification(builder,schemaName,operation.Table,operation.Name);
 
             // Sonra normal DROP COLUMN
-            base.Generate(operation, model, builder, terminate);
+            base.Generate(operation,model,builder,terminate);
         }
 
-  
-        // ORTAK HELPER: YAZ
-       
-        private void WriteDataClassification(
-            MigrationCommandListBuilder builder,
-            string? schema,
-            string tableName,
-            string columnName,
-            IProperty property) {
+        #endregion
+
+
+        #region Orchestrator helpers (Write / Clear)
+        
+        private void WriteDataClassification(MigrationCommandListBuilder builder,string? schema,string tableName,string columnName,IProperty property) {
+
             var schemaName = schema ?? "dbo";
 
             // Annotation'lardan değerleri oku
             var label = property.FindAnnotation(DataClassificationConstants.Label)?.Value?.ToString();
             var infoType = property.FindAnnotation(DataClassificationConstants.InformationType)?.Value?.ToString();
             var rank = property.FindAnnotation(DataClassificationConstants.Rank)?.Value?.ToString();
+
+            ValidateDataClassification(property,label,infoType,rank);
 
             // Hiç veri yoksa, bu kolon için classification yok demektir
             if (string.IsNullOrWhiteSpace(label)
@@ -184,35 +169,30 @@ namespace EFCore.DataClassification.Infrastructure {
             // 1) Senin kendi extended property'lerin (DataClassification:*)
             if (!string.IsNullOrWhiteSpace(label)) {
                 AppendExtendedProperty(
-                    builder, schemaName, tableName, columnName,
+                    builder,schemaName,tableName,columnName,
                     DataClassificationConstants.Label, label);
             }
 
             if (!string.IsNullOrWhiteSpace(infoType)) {
                 AppendExtendedProperty(
-                    builder, schemaName, tableName, columnName,
-                    DataClassificationConstants.InformationType, infoType);
+                    builder,schemaName,tableName,columnName,
+                    DataClassificationConstants.InformationType,infoType);
             }
 
             if (!string.IsNullOrWhiteSpace(rank)) {
                 AppendExtendedProperty(
-                    builder, schemaName, tableName, columnName,
-                    DataClassificationConstants.Rank, rank);
+                    builder,schemaName,tableName,columnName,
+                    DataClassificationConstants.Rank,rank);
             }
 
             // 2) SQL Server sensitivity classification
             AppendSensitivityClassification(
-                builder, schemaName, tableName, columnName,
-                label, infoType, rank);
+                builder,schemaName,tableName,columnName,
+                label,infoType,rank);
         }
 
-        // ORTAK HELPER: TEMİZLE
       
-        private void ClearDataClassification(
-            MigrationCommandListBuilder builder,
-            string schemaName,
-            string tableName,
-            string columnName) {
+        private void ClearDataClassification(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName) {
             // Extended properties
             AppendDropExtendedProperty(
                 builder, schemaName, tableName, columnName, DataClassificationConstants.Label);
@@ -228,21 +208,25 @@ namespace EFCore.DataClassification.Infrastructure {
                 builder, schemaName, tableName, columnName);
         }
 
-        private void AppendExtendedProperty(
-            MigrationCommandListBuilder builder,
-            string schemaName,
-            string tableName,
-            string columnName,
-            string propertyName,
-            string propertyValue) {
-            var safeValue = propertyValue.Replace("'", "''");
+        #endregion
+
+
+        #region Extended property helpers
+
+        private void AppendExtendedProperty(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName,string propertyName,string propertyValue) {
+
+            var stringMapping = Dependencies.TypeMappingSource.GetMapping(typeof(string));
+            var safeValue = stringMapping.GenerateSqlLiteral(propertyValue);
+
+          
+
 
             builder
                 .AppendLine(
                     $"""
                      EXEC sys.sp_addextendedproperty
                          @name = N'{propertyName}',
-                         @value = N'{safeValue}',
+                         @value = {safeValue},
                          @level0type = N'SCHEMA', @level0name = N'{schemaName}',
                          @level1type = N'TABLE',  @level1name = N'{tableName}',
                          @level2type = N'COLUMN', @level2name = N'{columnName}';
@@ -250,12 +234,9 @@ namespace EFCore.DataClassification.Infrastructure {
                 .EndCommand();
         }
 
-        private void AppendDropExtendedProperty(
-            MigrationCommandListBuilder builder,
-            string schemaName,
-            string tableName,
-            string columnName,
-            string propertyName) {
+        private void AppendDropExtendedProperty(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName,string propertyName) {
+            
+            
             var helper = Dependencies.SqlGenerationHelper;
             var fullName = helper.DelimitIdentifier(tableName, schemaName);
 
@@ -278,11 +259,11 @@ namespace EFCore.DataClassification.Infrastructure {
                 .EndCommand();
         }
 
-        private void AppendDropSensitivityClassification(
-          MigrationCommandListBuilder builder,
-         string schemaName,
-          string tableName,
-          string columnName) {
+        #endregion
+
+
+        #region Sensitivity classification helpers
+        private void AppendDropSensitivityClassification(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName) {
             var helper = Dependencies.SqlGenerationHelper;
 
             // OBJECT_ID için parantezsiz schema.table formu kullanmak daha sağlıklı
@@ -307,18 +288,10 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
 
-        private void AppendSensitivityClassification(
-            MigrationCommandListBuilder builder,
-            string schemaName,
-            string tableName,
-            string columnName,
-            string? label,
-            string? informationType,
-            string? rankString) {
+        private void AppendSensitivityClassification(MigrationCommandListBuilder builder,string schemaName,string tableName, string columnName,string? label,string? informationType,string? rankString) {
+
             // Hiç veri yoksa boşuna SQL üretme
-            if (string.IsNullOrWhiteSpace(label)
-                && string.IsNullOrWhiteSpace(informationType)
-                && string.IsNullOrWhiteSpace(rankString)) {
+            if (string.IsNullOrWhiteSpace(label)&& string.IsNullOrWhiteSpace(informationType)&& string.IsNullOrWhiteSpace(rankString)) {
                 return;
             }
 
@@ -334,6 +307,7 @@ namespace EFCore.DataClassification.Infrastructure {
             }
 
             var helper = Dependencies.SqlGenerationHelper;
+            var stringMapping = Dependencies.TypeMappingSource.GetMapping(typeof(string));
             var fullName = helper.DelimitIdentifier(tableName, schemaName);
             var delimitedColumn = helper.DelimitIdentifier(columnName);
 
@@ -345,11 +319,13 @@ namespace EFCore.DataClassification.Infrastructure {
             var parts = new List<string>();
 
             if (!string.IsNullOrWhiteSpace(label)) {
-                parts.Add($"LABEL = N'{label.Replace("'", "''")}'");
+                var safeLabel = stringMapping.GenerateSqlLiteral(label);
+                parts.Add($"LABEL = {safeLabel}");
             }
 
             if (!string.IsNullOrWhiteSpace(informationType)) {
-                parts.Add($"INFORMATION_TYPE = N'{informationType.Replace("'", "''")}'");
+                var safeInfoType = stringMapping.GenerateSqlLiteral(informationType);
+                parts.Add($"INFORMATION_TYPE = {safeInfoType}");
             }
 
             if (!string.IsNullOrWhiteSpace(sqlRank)) {
@@ -360,5 +336,53 @@ namespace EFCore.DataClassification.Infrastructure {
             builder.Append(");")
                    .EndCommand();
         }
+
+        #endregion
+
+        #region Validation
+
+        private static void ValidateDataClassification(IProperty property, string? label, string? informationType, string? rank) {
+            if (string.IsNullOrWhiteSpace(label)
+                && string.IsNullOrWhiteSpace(informationType)
+                && string.IsNullOrWhiteSpace(rank)) {
+                return;
+            }
+
+            var allowedRanks = new[] { "Low", "Medium", "High", "Critical" };
+
+            
+            static string GetEntityName(IProperty p) {
+                if (p.DeclaringType is IEntityType entityType) {
+                   
+                    return entityType.DisplayName();
+                }
+
+                
+                return p.DeclaringType.Name;
+            }
+
+            if (!string.IsNullOrWhiteSpace(rank) && !allowedRanks.Contains(rank)) {
+                var entityName = GetEntityName(property);
+                var propertyName = property.Name;
+
+                throw new DataClassificationException(
+                    property,
+                    $"Invalid DataClassification Rank '{rank}' on property '{entityName}.{propertyName}'. " +
+                    $"Allowed values: {string.Join(", ", allowedRanks)}.");
+            }
+
+            if (label?.Length > 128) {
+                var entityName = GetEntityName(property);
+                var propertyName = property.Name;
+
+                throw new DataClassificationException(
+                    property,
+                    $"DataClassification Label on '{entityName}.{propertyName}' is too long " +
+                    $"{label.Length} chars, max 128.");
+            }
+        }
+
+
+        #endregion
     }
 }

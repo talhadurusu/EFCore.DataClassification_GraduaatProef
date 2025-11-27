@@ -29,19 +29,16 @@ namespace EFCore.DataClassification.Infrastructure {
                 rowIdentityMapFactory,
                 commandBatchPreparerDependencies) {
         }
-#pragma warning restore EF1001 
 
-        protected override IEnumerable<MigrationOperation> Diff(
-            IColumn source,
-            IColumn target,
-            DiffContext diffContext) {
+
+        protected override IEnumerable<MigrationOperation> Diff(IColumn source,IColumn target,DiffContext diffContext) {
             var baseOps = base.Diff(source, target, diffContext).ToList();
 
-            // If EF already generated an AlterColumn, don't add another one
+            // If EF already generated an AlterColumn, don't add another 
             if (baseOps.OfType<AlterColumnOperation>().Any())
                 return baseOps;
 
-            // Only proceed if DataClassification annotations changed
+            // proceed if DataClassification annotations changed
             if (!HasDataClassificationChanged(source, target))
                 return baseOps;
 
@@ -53,10 +50,9 @@ namespace EFCore.DataClassification.Infrastructure {
             return baseOps;
         }
 
-        private static AlterColumnOperation CreateAlterColumnOperation(
-            IColumn source,
-            IColumn target,
-            IProperty targetProperty) {
+        private static AlterColumnOperation CreateAlterColumnOperation(IColumn source,IColumn target,IProperty targetProperty) {
+
+
             var sourceProperty = source.PropertyMappings.FirstOrDefault()?.Property;
             var newClrType = GetSafeClrType(targetProperty.ClrType);
             var oldClrType = GetSafeClrType(sourceProperty?.ClrType ?? targetProperty.ClrType);
@@ -76,7 +72,7 @@ namespace EFCore.DataClassification.Infrastructure {
                 IsUnicode = target.IsUnicode,
                 IsRowVersion = target.IsRowVersion,
 
-                // Previous column definition for migration comparison
+                // Previous column for comparison
                 OldColumn = new AddColumnOperation {
                     ClrType = oldClrType,
                     ColumnType = source.StoreType ?? sourceProperty?.GetColumnType(),
@@ -110,6 +106,7 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
         private static bool HasAnnotationChanged(IProperty source, IProperty target, string annotationKey) {
+
             var sourceValue = source.FindAnnotation(annotationKey)?.Value?.ToString() ?? string.Empty;
             var targetValue = target.FindAnnotation(annotationKey)?.Value?.ToString() ?? string.Empty;
             return sourceValue != targetValue;
