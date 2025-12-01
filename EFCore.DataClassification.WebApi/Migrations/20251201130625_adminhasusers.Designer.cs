@@ -5,6 +5,7 @@ using EFCore.DataClassification.WebApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,9 +13,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251201130625_adminhasusers")]
+    partial class adminhasusers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -104,11 +107,8 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AdminId")
-                        .HasColumnType("int")
-                        .HasAnnotation("DataClassification:InformationType", "Admin Reference")
-                        .HasAnnotation("DataClassification:Label", "Confidential")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
+                    b.Property<int?>("AdminId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Adress")
                         .IsRequired()
@@ -160,9 +160,7 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 {
                     b.HasOne("EFCore.DataClassification.WebApi.Models.Admin", null)
                         .WithMany("Users")
-                        .HasForeignKey("AdminId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("AdminId");
                 });
 
             modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.Admin", b =>

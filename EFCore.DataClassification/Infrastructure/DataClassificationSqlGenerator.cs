@@ -296,32 +296,32 @@ namespace EFCore.DataClassification.Infrastructure {
         #region Sensitivity classification helpers
         private void AppendDropSensitivityClassification(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName) {
             var helper = Dependencies.SqlGenerationHelper;
+            var stringMapping = Dependencies.TypeMappingSource.GetMapping(typeof(string));
 
-            // OBJECT_ID için parantezsiz schema.table formu kullanmak daha sağlıklı
             var objectIdName = $"{schemaName}.{tableName}";
+            var objectIdLiteral = stringMapping.GenerateSqlLiteral(objectIdName);
+            var columnLiteral = stringMapping.GenerateSqlLiteral(columnName);
 
-            // DDL tarafı için yine DelimitIdentifier
             var delimitedTable = helper.DelimitIdentifier(tableName, schemaName);
             var delimitedColumn = helper.DelimitIdentifier(columnName);
 
-            builder
-                .AppendLine(
-                    $"""
-             IF EXISTS (
-                 SELECT 1
-                 FROM sys.sensitivity_classifications sc
-                 WHERE sc.major_id = OBJECT_ID(N'{objectIdName}')
-                   AND sc.minor_id = COLUMNPROPERTY(OBJECT_ID(N'{objectIdName}'), N'{columnName}', 'ColumnId')
-             )
-                 DROP SENSITIVITY CLASSIFICATION FROM {delimitedTable}.{delimitedColumn};
-             """)
+            builder.AppendLine(
+                $"""
+         IF EXISTS (
+             SELECT 1
+             FROM sys.sensitivity_classifications sc
+             WHERE sc.major_id = OBJECT_ID({objectIdLiteral})
+               AND sc.minor_id = COLUMNPROPERTY(OBJECT_ID({objectIdLiteral}), {columnLiteral}, 'ColumnId')
+         )
+             DROP SENSITIVITY CLASSIFICATION FROM {delimitedTable}.{delimitedColumn};
+         """)
                 .EndCommand();
         }
 
 
         private void AppendSensitivityClassification(MigrationCommandListBuilder builder,string schemaName,string tableName, string columnName,string? label,string? informationType,string? rankString) {
 
-            // Hiç veri yoksa boşuna SQL üretme
+            
             if (string.IsNullOrWhiteSpace(label)&& string.IsNullOrWhiteSpace(informationType)&& string.IsNullOrWhiteSpace(rankString)) {
                 return;
             }
@@ -329,7 +329,7 @@ namespace EFCore.DataClassification.Infrastructure {
             string? sqlRank = null;
             if (!string.IsNullOrWhiteSpace(rankString)) {
                 sqlRank = rankString switch {
-                    "None" => null,  // None should not produce RANK clause
+                    "None" => null,  
                     "Low" => "LOW",
                     "Medium" => "MEDIUM",
                     "High" => "HIGH",

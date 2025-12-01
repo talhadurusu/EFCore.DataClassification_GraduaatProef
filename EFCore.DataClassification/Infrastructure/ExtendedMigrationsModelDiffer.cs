@@ -35,8 +35,7 @@ namespace EFCore.DataClassification.Infrastructure {
         protected override IEnumerable<MigrationOperation> Diff(IColumn source, IColumn target, DiffContext diffContext) {
             var baseOps = base.Diff(source, target, diffContext).ToList();
 
-            if (baseOps.OfType<AlterColumnOperation>().Any())
-                return baseOps;
+            
 
             var sourceProperty = source.PropertyMappings.FirstOrDefault()?.Property;
             var targetProperty = target.PropertyMappings.FirstOrDefault()?.Property;

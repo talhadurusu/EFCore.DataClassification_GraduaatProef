@@ -10,5 +10,8 @@ namespace EFCore.DataClassification.WebApi.Models {
         public string Email { get; set; }
         [DataClassification("Highly Confidential", "Admin Key", SensitivityRank.Critical)]
         public int Adminkey { get; set; }
+
+        [DataClassification("Confidential", "Associated Users", SensitivityRank.Medium)]
+        public List<User> Users { get; set; } = [];
     }
 }

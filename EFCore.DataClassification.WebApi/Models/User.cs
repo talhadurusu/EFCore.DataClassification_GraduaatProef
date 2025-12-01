@@ -24,7 +24,10 @@ namespace EFCore.DataClassification.WebApi.Models {
         [DataClassification("blablabla", "Salary blabla", SensitivityRank.High)]
         public int Salary { get; set; }
 
-
+        
         public List<Game> Games { get; set; }
+
+        [DataClassification("Confidential", "Admin Reference", SensitivityRank.High)]
+        public int AdminId { get; set; }
     }
 }

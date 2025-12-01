@@ -163,6 +163,239 @@ public class DataClassificationSqlGeneratorTests
         Assert.DoesNotContain("ADD SENSITIVITY CLASSIFICATION", sql);
     }
 
+    /// <summary>
+    /// CRITICAL TEST: Tests that Generate(CreateTableOperation) calls base and processes columns
+    /// This verifies the override exists and doesn't break the base functionality.
+    /// 
+    /// Note: Full integration testing of CREATE TABLE + classification requires
+    /// a real migration scenario which is covered by integration tests.
+    /// This unit test verifies the method override works without errors.
+    /// </summary>
+    [Fact]
+    public void Generate_CreateTableOperation_CallsBaseWithoutError()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<TestDbContext>()
+            .UseSqlServer("Server=.;Database=Test;")
+            .Options;
+
+        IModel model;
+        using (var context = new TestDbContext(options))
+        {
+            model = context.Model;
+        }
+
+        var createTableOp = new CreateTableOperation
+        {
+            Name = "TestEntities",
+            Schema = "dbo",
+            Columns =
+            {
+                new AddColumnOperation
+                {
+                    Name = "Id",
+                    Table = "TestEntities",
+                    Schema = "dbo",
+                    ClrType = typeof(int),
+                    ColumnType = "int",
+                    IsNullable = false
+                },
+                new AddColumnOperation
+                {
+                    Name = "Email",
+                    Table = "TestEntities",
+                    Schema = "dbo",
+                    ClrType = typeof(string),
+                    ColumnType = "nvarchar(max)",
+                    IsNullable = false
+                }
+            },
+            PrimaryKey = new AddPrimaryKeyOperation
+            {
+                Name = "PK_TestEntities",
+                Table = "TestEntities",
+                Schema = "dbo",
+                Columns = new[] { "Id" }
+            }
+        };
+
+        // Act
+        var sql = GenerateSql(createTableOp, model);
+
+        // Assert - Verify CREATE TABLE was generated (base functionality works)
+        Assert.Contains("CREATE TABLE", sql);
+        Assert.Contains("[TestEntities]", sql);
+        Assert.Contains("[Id]", sql);
+        Assert.Contains("[Email]", sql);
+        
+        // The method should execute without throwing exceptions
+        // Full classification SQL generation is tested in integration tests
+    }
+
+    /// <summary>
+    /// CRITICAL TEST: Tests that Generate(AddColumnOperation) calls base and processes the column
+    /// This verifies the override exists and doesn't break the base functionality.
+    /// 
+    /// Note: Full integration testing of ADD COLUMN + classification requires
+    /// a real migration scenario which is covered by integration tests.
+    /// This unit test verifies the method override works without errors.
+    /// </summary>
+    [Fact]
+    public void Generate_AddColumnOperation_CallsBaseWithoutError()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<TestDbContext>()
+            .UseSqlServer("Server=.;Database=Test;")
+            .Options;
+
+        IModel model;
+        using (var context = new TestDbContext(options))
+        {
+            model = context.Model;
+        }
+
+        var addColumnOp = new AddColumnOperation
+        {
+            Name = "Email",
+            Table = "TestEntities",
+            Schema = "dbo",
+            ClrType = typeof(string),
+            ColumnType = "nvarchar(max)",
+            IsNullable = false
+        };
+
+        // Act
+        var sql = GenerateSql(addColumnOp, model);
+
+        // Assert - Verify ALTER TABLE ADD was generated (base functionality works)
+        Assert.Contains("ALTER TABLE", sql);
+        Assert.Contains("ADD [Email]", sql);
+        
+        // The method should execute without throwing exceptions
+        // Full classification SQL generation is tested in integration tests
+    }
+
+    /// <summary>
+    /// TEST: Verifies that CREATE TABLE without classified columns doesn't generate classification SQL
+    /// </summary>
+    [Fact]
+    public void Generate_CreateTableWithoutClassification_ProducesNoClassificationSql()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<TestDbContextNoClassification>()
+            .UseSqlServer("Server=.;Database=Test;")
+            .Options;
+
+        using var context = new TestDbContextNoClassification(options);
+        var model = context.Model;
+
+        var createTableOp = new CreateTableOperation
+        {
+            Name = "SimpleEntities",
+            Schema = "dbo",
+            Columns =
+            {
+                new AddColumnOperation
+                {
+                    Name = "Id",
+                    Table = "SimpleEntities",
+                    Schema = "dbo",
+                    ClrType = typeof(int),
+                    ColumnType = "int",
+                    IsNullable = false
+                },
+                new AddColumnOperation
+                {
+                    Name = "Name",
+                    Table = "SimpleEntities",
+                    Schema = "dbo",
+                    ClrType = typeof(string),
+                    ColumnType = "nvarchar(max)",
+                    IsNullable = false
+                }
+            }
+        };
+
+        // Act
+        var sql = GenerateSql(createTableOp, model);
+
+        // Assert
+        Assert.Contains("CREATE TABLE", sql);
+        Assert.DoesNotContain("sp_addextendedproperty", sql);
+        Assert.DoesNotContain("ADD SENSITIVITY CLASSIFICATION", sql);
+    }
+
+    /// <summary>
+    /// TEST: Verifies that ADD COLUMN without classification doesn't generate classification SQL
+    /// </summary>
+    [Fact]
+    public void Generate_AddColumnWithoutClassification_ProducesNoClassificationSql()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<TestDbContextNoClassification>()
+            .UseSqlServer("Server=.;Database=Test;")
+            .Options;
+
+        using var context = new TestDbContextNoClassification(options);
+        var model = context.Model;
+
+        var addColumnOp = new AddColumnOperation
+        {
+            Name = "Name",
+            Table = "SimpleEntities",
+            Schema = "dbo",
+            ClrType = typeof(string),
+            ColumnType = "nvarchar(max)",
+            IsNullable = false
+        };
+
+        // Act
+        var sql = GenerateSql(addColumnOp, model);
+
+        // Assert
+        Assert.Contains("ALTER TABLE", sql);
+        Assert.Contains("ADD [Name]", sql);
+        Assert.DoesNotContain("sp_addextendedproperty", sql);
+        Assert.DoesNotContain("ADD SENSITIVITY CLASSIFICATION", sql);
+    }
+
+    #region Test Models and DbContexts
+
+    private class TestEntity
+    {
+        public int Id { get; set; }
+        public string Email { get; set; } = "";
+    }
+
+    private class TestDbContext : DbContext
+    {
+        public TestDbContext(DbContextOptions<TestDbContext> options) : base(options) { }
+        public DbSet<TestEntity> TestEntities => Set<TestEntity>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TestEntity>()
+                .Property(e => e.Email)
+                .HasAnnotation("DataClassification:Label", "Confidential")
+                .HasAnnotation("DataClassification:InformationType", "Email Address")
+                .HasAnnotation("DataClassification:Rank", "High");
+        }
+    }
+
+    private class SimpleEntity
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+    }
+
+    private class TestDbContextNoClassification : DbContext
+    {
+        public TestDbContextNoClassification(DbContextOptions<TestDbContextNoClassification> options) : base(options) { }
+        public DbSet<SimpleEntity> SimpleEntities => Set<SimpleEntity>();
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private string GenerateSql(MigrationOperation operation)
@@ -183,6 +416,29 @@ public class DataClassificationSqlGeneratorTests
         var generator = new DataClassificationSqlGenerator(dependencies, commandBatchPreparer);
         
         var commands = generator.Generate(new[] { operation }, null);
+        var sql = string.Join("\n", commands.Select(c => c.CommandText));
+
+        return sql;
+    }
+
+    private string GenerateSql(MigrationOperation operation, IModel model)
+    {
+        var options = new DbContextOptionsBuilder()
+            .UseSqlServer("Server=.;Database=Test;")
+            .Options;
+
+        using var context = new DbContext(options);
+        var serviceProvider = ((IInfrastructure<IServiceProvider>)context).Instance;
+        
+        var dependencies = serviceProvider.GetService(typeof(MigrationsSqlGeneratorDependencies)) as MigrationsSqlGeneratorDependencies;
+        var commandBatchPreparer = serviceProvider.GetService(typeof(ICommandBatchPreparer)) as ICommandBatchPreparer;
+
+        if (dependencies == null || commandBatchPreparer == null)
+            throw new InvalidOperationException("Could not resolve required services");
+
+        var generator = new DataClassificationSqlGenerator(dependencies, commandBatchPreparer);
+        
+        var commands = generator.Generate(new[] { operation }, model);
         var sql = string.Join("\n", commands.Select(c => c.CommandText));
 
         return sql;
