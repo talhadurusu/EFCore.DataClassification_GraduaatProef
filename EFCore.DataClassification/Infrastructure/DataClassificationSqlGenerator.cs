@@ -236,50 +236,59 @@ namespace EFCore.DataClassification.Infrastructure {
         #region Extended property helpers
 
         private void AppendExtendedProperty(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName,string propertyName,string propertyValue) {
-
             var stringMapping = Dependencies.TypeMappingSource.GetMapping(typeof(string));
-            var safeValue = stringMapping.GenerateSqlLiteral(propertyValue);
 
-          
-
+            var nameLiteral = stringMapping.GenerateSqlLiteral(propertyName);
+            var schemaLiteral = stringMapping.GenerateSqlLiteral(schemaName);
+            var tableLiteral = stringMapping.GenerateSqlLiteral(tableName);
+            var columnLiteral = stringMapping.GenerateSqlLiteral(columnName);
+            var valueLiteral = stringMapping.GenerateSqlLiteral(propertyValue);
 
             builder
                 .AppendLine(
                     $"""
-                     EXEC sys.sp_addextendedproperty
-                         @name = N'{propertyName}',
-                         @value = {safeValue},
-                         @level0type = N'SCHEMA', @level0name = N'{schemaName}',
-                         @level1type = N'TABLE',  @level1name = N'{tableName}',
-                         @level2type = N'COLUMN', @level2name = N'{columnName}';
-                     """)
+             EXEC sys.sp_addextendedproperty
+                 @name = {nameLiteral},
+                 @value = {valueLiteral},
+                 @level0type = N'SCHEMA', @level0name = {schemaLiteral},
+                 @level1type = N'TABLE',  @level1name = {tableLiteral},
+                 @level2type = N'COLUMN', @level2name = {columnLiteral};
+             """)
                 .EndCommand();
         }
+
 
         private void AppendDropExtendedProperty(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName,string propertyName) {
-            
-            
+
             var helper = Dependencies.SqlGenerationHelper;
+            var stringMapping = Dependencies.TypeMappingSource.GetMapping(typeof(string));
+
             var fullName = helper.DelimitIdentifier(tableName, schemaName);
+            var fullNameLiteral = stringMapping.GenerateSqlLiteral(fullName);
+            var columnLiteral = stringMapping.GenerateSqlLiteral(columnName);
+            var nameLiteral = stringMapping.GenerateSqlLiteral(propertyName);
+            var schemaLiteral = stringMapping.GenerateSqlLiteral(schemaName);
+            var tableLiteral = stringMapping.GenerateSqlLiteral(tableName);
 
             builder
                 .AppendLine(
                     $"""
-                     IF EXISTS (
-                         SELECT 1
-                         FROM sys.extended_properties ep
-                         WHERE ep.name = N'{propertyName}'
-                           AND ep.major_id = OBJECT_ID(N'{fullName}')
-                           AND ep.minor_id = COLUMNPROPERTY(OBJECT_ID(N'{fullName}'), N'{columnName}', 'ColumnId')
-                     )
-                         EXEC sys.sp_dropextendedproperty
-                             @name = N'{propertyName}',
-                             @level0type = N'SCHEMA', @level0name = N'{schemaName}',
-                             @level1type = N'TABLE',  @level1name = N'{tableName}',
-                             @level2type = N'COLUMN', @level2name = N'{columnName}';
-                     """)
+             IF EXISTS (
+                 SELECT 1
+                 FROM sys.extended_properties ep
+                 WHERE ep.name = {nameLiteral}
+                   AND ep.major_id = OBJECT_ID({fullNameLiteral})
+                   AND ep.minor_id = COLUMNPROPERTY(OBJECT_ID({fullNameLiteral}), {columnLiteral}, 'ColumnId')
+             )
+                 EXEC sys.sp_dropextendedproperty
+                     @name = {nameLiteral},
+                     @level0type = N'SCHEMA', @level0name = {schemaLiteral},
+                     @level1type = N'TABLE',  @level1name = {tableLiteral},
+                     @level2type = N'COLUMN', @level2name = {columnLiteral};
+             """)
                 .EndCommand();
         }
+
 
         #endregion
 
@@ -320,6 +329,7 @@ namespace EFCore.DataClassification.Infrastructure {
             string? sqlRank = null;
             if (!string.IsNullOrWhiteSpace(rankString)) {
                 sqlRank = rankString switch {
+                    "None" => null,  // None should not produce RANK clause
                     "Low" => "LOW",
                     "Medium" => "MEDIUM",
                     "High" => "HIGH",
