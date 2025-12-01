@@ -13,8 +13,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251127100314_games")]
-    partial class games
+    [Migration("20251128104934_gamehasdc")]
+    partial class gamehasdc
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -66,7 +66,10 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Game Description")
+                        .HasAnnotation("DataClassification:Label", "Internal")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
 
                     b.Property<string>("Genre")
                         .IsRequired()
@@ -77,17 +80,17 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.Property<string>("PublisherUnikeUnitID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Publisher Unique Unit ID")
-                        .HasAnnotation("DataClassification:Label", "Private")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ReleaseDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Game Title")
+                        .HasAnnotation("DataClassification:Label", "Public")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");

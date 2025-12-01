@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCore.DataClassification.Constants {
-    internal static class DataClassificationConstants {
+namespace EFCore.DataClassification.Annotations {
+    public static class DataClassificationConstants {
     
         public const string AnnotationPrefix = "DataClassification:";
         public const string Label = AnnotationPrefix + "Label";

@@ -11,8 +11,7 @@ namespace EFCore.DataClassification.Extensions {
        
 
         public static DbContextOptionsBuilder UseDataClassificationSqlServer(this DbContextOptionsBuilder optionsBuilder) {
-            // Extension zaten ApplyServices içinde servisi değiştiriyor.
-            // Tek yapmamız gereken bu extension'ı options'a eklemek.
+            
             var extension = optionsBuilder.Options.FindExtension<DataClassificationDbContextOptionsExtension>()
                             ?? new DataClassificationDbContextOptionsExtension();
 

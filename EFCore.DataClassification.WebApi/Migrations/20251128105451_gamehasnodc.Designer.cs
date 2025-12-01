@@ -13,8 +13,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251127132540_gamedsc")]
-    partial class gamedsc
+    [Migration("20251128105451_gamehasnodc")]
+    partial class gamehasnodc
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -66,37 +66,25 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Game Description")
-                        .HasAnnotation("DataClassification:Label", "Internal")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Genre")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)")
-                        .HasAnnotation("DataClassification:InformationType", "Game Price")
-                        .HasAnnotation("DataClassification:Label", "Confidential")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("PublisherUnikeUnitID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Publisher Unique Unit ID")
-                        .HasAnnotation("DataClassification:Label", "Private")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ReleaseDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Game Title")
-                        .HasAnnotation("DataClassification:Label", "Public")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");

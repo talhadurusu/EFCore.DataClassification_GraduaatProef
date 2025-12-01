@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using EFCore.DataClassification.Constants;
+using EFCore.DataClassification.Annotations;
+using EFCore.DataClassification.Operations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -31,67 +32,66 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
 
-        protected override IEnumerable<MigrationOperation> Diff(IColumn source,IColumn target,DiffContext diffContext) {
+        protected override IEnumerable<MigrationOperation> Diff(IColumn source, IColumn target, DiffContext diffContext) {
             var baseOps = base.Diff(source, target, diffContext).ToList();
 
-            // If EF already generated an AlterColumn, don't add another 
             if (baseOps.OfType<AlterColumnOperation>().Any())
                 return baseOps;
 
-            // proceed if DataClassification annotations changed
-            if (!HasDataClassificationChanged(source, target))
-                return baseOps;
-
+            var sourceProperty = source.PropertyMappings.FirstOrDefault()?.Property;
             var targetProperty = target.PropertyMappings.FirstOrDefault()?.Property;
-            if (targetProperty is null)
+
+            if (sourceProperty is null && targetProperty is null)
                 return baseOps;
 
-            baseOps.Add(CreateAlterColumnOperation(source, target, targetProperty));
+            if (sourceProperty != null && targetProperty is null) {
+                baseOps.Add(GenerateRemoveOperation(source));
+                return baseOps;
+            }
+
+            if (sourceProperty is null && targetProperty != null) {
+                baseOps.Add(GenerateCreateOperation(target, targetProperty));
+                return baseOps;
+            }
+
+            if (!HasDataClassificationChanged(source, target) || targetProperty is null)
+                return baseOps;
+
+            baseOps.Add(GenerateRemoveOperation(target));
+            baseOps.Add(GenerateCreateOperation(target, targetProperty));
             return baseOps;
         }
 
-        private static AlterColumnOperation CreateAlterColumnOperation(IColumn source,IColumn target,IProperty targetProperty) {
-
-
-            var sourceProperty = source.PropertyMappings.FirstOrDefault()?.Property;
-            var newClrType = GetSafeClrType(targetProperty.ClrType);
-            var oldClrType = GetSafeClrType(sourceProperty?.ClrType ?? targetProperty.ClrType);
-
-            return new AlterColumnOperation {
-                Schema = target.Table.Schema,
-                Table = target.Table.Name,
-                Name = target.Name,
-
-                // Current column definition
-                ClrType = newClrType,
-                ColumnType = target.StoreType ?? targetProperty.GetColumnType(),
-                IsNullable = target.IsNullable,
-                MaxLength = target.MaxLength,
-                Precision = target.Precision,
-                Scale = target.Scale,
-                IsUnicode = target.IsUnicode,
-                IsRowVersion = target.IsRowVersion,
-
-                // Previous column for comparison
-                OldColumn = new AddColumnOperation {
-                    ClrType = oldClrType,
-                    ColumnType = source.StoreType ?? sourceProperty?.GetColumnType(),
-                    IsNullable = source.IsNullable,
-                    MaxLength = source.MaxLength,
-                    Precision = source.Precision,
-                    Scale = source.Scale,
-                    IsUnicode = source.IsUnicode,
-                    IsRowVersion = source.IsRowVersion
-                }
+        private static CreateDataClassificationOperation GenerateCreateOperation(IColumn column, IProperty property)
+            => new() {
+                Schema = column.Table.Schema,
+                Table = column.Table.Name,
+                Column = column.Name,
+                Label = GetAnnotation(property, DataClassificationConstants.Label),
+                InformationType = GetAnnotation(property, DataClassificationConstants.InformationType),
+                Rank = GetAnnotation(property, DataClassificationConstants.Rank),
+                PropertyDisplayName = GetPropertyDisplayName(property)
             };
+
+        private static RemoveDataClassificationOperation GenerateRemoveOperation(IColumn column)
+            => new() {
+                Schema = column.Table.Schema,
+                Table = column.Table.Name,
+                Column = column.Name
+            };
+
+        private static string? GetAnnotation(IProperty property, string key)
+            => property.FindAnnotation(key)?.Value?.ToString();
+
+        private static string GetPropertyDisplayName(IProperty property) {
+            if (property.DeclaringType is IEntityType entityType) {
+                return $"{entityType.DisplayName()}.{property.Name}";
+            }
+
+            return $"{property.DeclaringType.Name}.{property.Name}";
         }
 
-        /// <summary>
-        /// Ensures CLR type is safe for migration operations.
-        /// Falls back to string type for null or namespace-less types.
-        /// </summary>
-        private static Type GetSafeClrType(Type? type)
-            => type == null || type.Namespace == null ? typeof(string) : type;
+
 
         private static bool HasDataClassificationChanged(IColumn source, IColumn target) {
             var sProp = source.PropertyMappings.FirstOrDefault()?.Property;

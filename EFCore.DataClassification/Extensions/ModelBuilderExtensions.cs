@@ -1,5 +1,5 @@
-﻿using EFCore.DataClassification.Attributes;
-using EFCore.DataClassification.Constants;
+﻿using EFCore.DataClassification.Annotations;
+using EFCore.DataClassification.Attributes;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

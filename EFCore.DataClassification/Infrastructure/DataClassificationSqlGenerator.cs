@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using EFCore.DataClassification.Constants;
+﻿using EFCore.DataClassification.Annotations;
 using EFCore.DataClassification.Exceptions;
+using EFCore.DataClassification.Operations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -26,10 +25,37 @@ namespace EFCore.DataClassification.Infrastructure {
         }
         #endregion
 
+        protected override void Generate(MigrationOperation operation,IModel? model,MigrationCommandListBuilder builder) {
+
+            switch (operation) {
+                case CreateDataClassificationOperation create:
+                    WriteDataClassification(
+                        builder,
+                        create.Schema,
+                        create.Table,
+                        create.Column,
+                        create.Label,
+                        create.InformationType,
+                        create.Rank,
+                        create.PropertyDisplayName);
+                    return;
+
+                case RemoveDataClassificationOperation remove:
+                    ClearDataClassification(
+                        builder,
+                        remove.Schema ?? "dbo",
+                        remove.Table,
+                        remove.Column);
+                    return;
+            }
+
+            base.Generate(operation, model, builder);
+        }
 
         #region Generate overrides (Create / Add / Alter / Drop)
 
         // 1) CREATE TABLE
+
 
         protected override void Generate(CreateTableOperation operation,IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
          
@@ -92,52 +118,15 @@ namespace EFCore.DataClassification.Infrastructure {
                 property);
         }
 
-
-        // 3) ALTER COLUMN
-        protected override void Generate(AlterColumnOperation operation,IModel? model,MigrationCommandListBuilder builder) {
-            // Önce normal ALTER COLUMN
-            base.Generate(operation, model, builder);
-
-            if (model is null)
-                return;
-
-            var relationalModel = model.GetRelationalModel();
-            var table = relationalModel.FindTable(operation.Table, operation.Schema);
-            if (table is null)
-                return;
-
-            var column = table.FindColumn(operation.Name);
-            if (column is null)
-                return;
-
-            var property = column.PropertyMappings.FirstOrDefault()?.Property;
-            if (property is null)
-                return;
-
-            var schemaName = operation.Schema ?? "dbo";
-
-            // 1) Eski classification + extended property'leri sil
-            ClearDataClassification(builder, schemaName, operation.Table, operation.Name);
-
-            // 2) Yeni annotation'lardan yeniden oluştur
-            WriteDataClassification(
-                builder,
-                schemaName,          // schema paramı nullable ama burada zaten non-null
-                operation.Table,
-                operation.Name,
-                property);
-        }
-
-
         // 4) DROP COLUMN
      
         protected override void Generate(DropColumnOperation operation,IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
             var schemaName = operation.Schema ?? "dbo";
 
-            // Kolon düşmeden önce classification metadata'yı temizle
+            
             ClearDataClassification(builder,schemaName,operation.Table,operation.Name);
 
-            // Sonra normal DROP COLUMN
+       
             base.Generate(operation,model,builder,terminate);
         }
 
@@ -161,8 +150,6 @@ namespace EFCore.DataClassification.Infrastructure {
             if (string.IsNullOrWhiteSpace(label)
                 && string.IsNullOrWhiteSpace(infoType)
                 && string.IsNullOrWhiteSpace(rank)) {
-                // CreateTable/AddColumn senaryosunda zaten eski metadata yok.
-                // AlterColumn senaryosunda ise ClearDataClassification çağrılmış olacak.
                 return;
             }
 
@@ -191,7 +178,42 @@ namespace EFCore.DataClassification.Infrastructure {
                 label,infoType,rank);
         }
 
-      
+        private void WriteDataClassification(
+           MigrationCommandListBuilder builder,
+           string? schema,
+           string table,
+           string column,
+           string? label,
+           string? informationType,
+           string? rank,
+           string? propertyDisplayName) {
+
+            var schemaName = schema ?? "dbo";
+            var targetName = propertyDisplayName ?? $"{schemaName}.{table}.{column}";
+
+            ValidateDataClassification(targetName, label, informationType, rank);
+
+            if (string.IsNullOrWhiteSpace(label)
+                && string.IsNullOrWhiteSpace(informationType)
+                && string.IsNullOrWhiteSpace(rank)) {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(label)) {
+                AppendExtendedProperty(builder, schemaName, table, column, DataClassificationConstants.Label, label);
+            }
+
+            if (!string.IsNullOrWhiteSpace(informationType)) {
+                AppendExtendedProperty(builder, schemaName, table, column, DataClassificationConstants.InformationType, informationType);
+            }
+
+            if (!string.IsNullOrWhiteSpace(rank)) {
+                AppendExtendedProperty(builder, schemaName, table, column, DataClassificationConstants.Rank, rank);
+            }
+
+            AppendSensitivityClassification(builder, schemaName, table, column, label, informationType, rank);
+        }
+
         private void ClearDataClassification(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName) {
             // Extended properties
             AppendDropExtendedProperty(
@@ -348,16 +370,13 @@ namespace EFCore.DataClassification.Infrastructure {
                 return;
             }
 
-            var allowedRanks = new[] { "Low", "Medium", "High", "Critical" };
+            var allowedRanks = new[] { "None", "Low", "Medium", "High", "Critical" };
 
-            
             static string GetEntityName(IProperty p) {
                 if (p.DeclaringType is IEntityType entityType) {
-                   
                     return entityType.DisplayName();
                 }
 
-                
                 return p.DeclaringType.Name;
             }
 
@@ -379,6 +398,26 @@ namespace EFCore.DataClassification.Infrastructure {
                     property,
                     $"DataClassification Label on '{entityName}.{propertyName}' is too long " +
                     $"{label.Length} chars, max 128.");
+            }
+        }
+
+        private static void ValidateDataClassification(string targetName, string? label, string? informationType, string? rank) {
+            if (string.IsNullOrWhiteSpace(label)
+                && string.IsNullOrWhiteSpace(informationType)
+                && string.IsNullOrWhiteSpace(rank)) {
+                return;
+            }
+
+            var allowedRanks = new[] { "None", "Low", "Medium", "High", "Critical" };
+
+            if (!string.IsNullOrWhiteSpace(rank) && !allowedRanks.Contains(rank)) {
+                throw new DataClassificationException(
+                    $"Invalid DataClassification Rank '{rank}' on property '{targetName}'. Allowed values: {string.Join(", ", allowedRanks)}.");
+            }
+
+            if (label?.Length > 128) {
+                throw new DataClassificationException(
+                    $"DataClassification Label on '{targetName}' is too long ({label.Length} chars, max 128).");
             }
         }
 

@@ -5,6 +5,7 @@ using EFCore.DataClassification.WebApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,9 +13,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251128104752_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -32,11 +35,17 @@ namespace EFCore.DataClassification.WebApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Adminkey")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasAnnotation("DataClassification:InformationType", "Security Info")
+                        .HasAnnotation("DataClassification:Label", "Private")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Contact Info")
+                        .HasAnnotation("DataClassification:Label", "Private")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -98,13 +107,16 @@ namespace EFCore.DataClassification.WebApi.Migrations
                     b.Property<string>("Adress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "ev adresi")
+                        .HasAnnotation("DataClassification:InformationType", "huis adress")
                         .HasAnnotation("DataClassification:Label", "Private")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Contact Info")
+                        .HasAnnotation("DataClassification:Label", "Public")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
 
                     b.Property<string>("Name")
                         .IsRequired()

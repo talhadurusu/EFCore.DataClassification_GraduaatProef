@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using EFCore.DataClassification.Models;
-using EFCore.DataClassification.Constants;
+using EFCore.DataClassification.Annotations;
 
 namespace EFCore.DataClassification.Extensions;
 
