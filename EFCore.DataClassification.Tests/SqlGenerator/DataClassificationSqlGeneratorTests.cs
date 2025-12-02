@@ -227,7 +227,10 @@ public class DataClassificationSqlGeneratorTests
         Assert.Contains("[TestEntities]", sql);
         Assert.Contains("[Id]", sql);
         Assert.Contains("[Email]", sql);
-        
+        Assert.Contains("sp_addextendedproperty", sql);
+        Assert.Contains("ADD SENSITIVITY CLASSIFICATION", sql);
+
+
         // The method should execute without throwing exceptions
         // Full classification SQL generation is tested in integration tests
     }
@@ -270,9 +273,10 @@ public class DataClassificationSqlGeneratorTests
         // Assert - Verify ALTER TABLE ADD was generated (base functionality works)
         Assert.Contains("ALTER TABLE", sql);
         Assert.Contains("ADD [Email]", sql);
-        
-        // The method should execute without throwing exceptions
-        // Full classification SQL generation is tested in integration tests
+        Assert.Contains("sp_addextendedproperty", sql);
+        Assert.Contains("ADD SENSITIVITY CLASSIFICATION", sql);
+
+
     }
 
     /// <summary>
@@ -372,13 +376,16 @@ public class DataClassificationSqlGeneratorTests
         public TestDbContext(DbContextOptions<TestDbContext> options) : base(options) { }
         public DbSet<TestEntity> TestEntities => Set<TestEntity>();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<TestEntity>()
-                .Property(e => e.Email)
-                .HasAnnotation("DataClassification:Label", "Confidential")
-                .HasAnnotation("DataClassification:InformationType", "Email Address")
-                .HasAnnotation("DataClassification:Rank", "High");
+        protected override void OnModelCreating(ModelBuilder modelBuilder) {
+            modelBuilder.Entity<TestEntity>(b =>
+            {
+                b.ToTable("TestEntities", "dbo"); 
+
+                b.Property(e => e.Email)
+                    .HasAnnotation("DataClassification:Label", "Confidential")
+                    .HasAnnotation("DataClassification:InformationType", "Email Address")
+                    .HasAnnotation("DataClassification:Rank", "High");
+            });
         }
     }
 
@@ -401,7 +408,7 @@ public class DataClassificationSqlGeneratorTests
     private string GenerateSql(MigrationOperation operation)
     {
         var options = new DbContextOptionsBuilder()
-            .UseSqlServer("Server=.;Database=Test;")
+            .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Fake;Trusted_Connection=True;TrustServerCertificate=True")
             .Options;
 
         using var context = new DbContext(options);
@@ -424,7 +431,7 @@ public class DataClassificationSqlGeneratorTests
     private string GenerateSql(MigrationOperation operation, IModel model)
     {
         var options = new DbContextOptionsBuilder()
-            .UseSqlServer("Server=.;Database=Test;")
+            .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Fake;Trusted_Connection=True;TrustServerCertificate=True")
             .Options;
 
         using var context = new DbContext(options);

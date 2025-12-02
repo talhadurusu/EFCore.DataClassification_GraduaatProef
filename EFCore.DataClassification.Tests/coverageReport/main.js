@@ -214,7 +214,7 @@ var assemblies = [
     "name": "EFCore.DataClassification",
     "classes": [
       { "name": "EFCore.DataClassification.Attributes.DataClassificationAttribute", "rp": "EFCore.DataClassification_DataClassificationAttribute.html", "cl": 8, "ucl": 0, "cal": 8, "tl": 23, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "EFCore.DataClassification.DesignTime.DataClassificationDesignTimeServices", "rp": "EFCore.DataClassification_DataClassificationDesignTimeServices.html", "cl": 0, "ucl": 4, "cal": 4, "tl": 19, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "EFCore.DataClassification.DesignTime.DataClassificationDesignTimeServices", "rp": "EFCore.DataClassification_DataClassificationDesignTimeServices.html", "cl": 4, "ucl": 0, "cal": 4, "tl": 19, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "EFCore.DataClassification.Exceptions.DataClassificationException", "rp": "EFCore.DataClassification_DataClassificationException.html", "cl": 10, "ucl": 3, "cal": 13, "tl": 34, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "EFCore.DataClassification.Extensions.DataClassificationDbContextOptionsExtension", "rp": "EFCore.DataClassification_DataClassificationDbContextOptionsExtension.html", "cl": 14, "ucl": 0, "cal": 14, "tl": 34, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "EFCore.DataClassification.Extensions.DbContextOptionsBuilderExtensions", "rp": "EFCore.DataClassification_DbContextOptionsBuilderExtensions.html", "cl": 6, "ucl": 0, "cal": 6, "tl": 23, "cb": 2, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -223,8 +223,8 @@ var assemblies = [
       { "name": "EFCore.DataClassification.Extensions.PropertyBuilderExtensions", "rp": "EFCore.DataClassification_PropertyBuilderExtensions.html", "cl": 13, "ucl": 0, "cal": 13, "tl": 29, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "EFCore.DataClassification.Generators.DataClassificationMigrationOperationGenerator", "rp": "EFCore.DataClassification_DataClassificationMigrationOperationGenerator.html", "cl": 0, "ucl": 36, "cal": 36, "tl": 55, "cb": 0, "tb": 4, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "EFCore.DataClassification.Generators.DataClassificationMigrationsGenerator", "rp": "EFCore.DataClassification_DataClassificationMigrationsGenerator.html", "cl": 0, "ucl": 7, "cal": 7, "tl": 19, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "EFCore.DataClassification.Infrastructure.DataClassificationMigrationsModelDiffer", "rp": "EFCore.DataClassification_DataClassificationMigrationsModelDiffer.html", "cl": 6, "ucl": 52, "cal": 58, "tl": 114, "cb": 0, "tb": 50, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "EFCore.DataClassification.Infrastructure.DataClassificationSqlGenerator", "rp": "EFCore.DataClassification_DataClassificationSqlGenerator.html", "cl": 184, "ucl": 88, "cal": 272, "tl": 437, "cb": 57, "tb": 126, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "EFCore.DataClassification.Infrastructure.DataClassificationMigrationsModelDiffer", "rp": "EFCore.DataClassification_DataClassificationMigrationsModelDiffer.html", "cl": 51, "ucl": 7, "cal": 58, "tl": 114, "cb": 34, "tb": 50, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "EFCore.DataClassification.Infrastructure.DataClassificationSqlGenerator", "rp": "EFCore.DataClassification_DataClassificationSqlGenerator.html", "cl": 244, "ucl": 28, "cal": 272, "tl": 437, "cb": 101, "tb": 126, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "EFCore.DataClassification.Operations.CreateDataClassificationOperation", "rp": "EFCore.DataClassification_CreateDataClassificationOperation.html", "cl": 7, "ucl": 0, "cal": 7, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "EFCore.DataClassification.Operations.RemoveDataClassificationOperation", "rp": "EFCore.DataClassification_RemoveDataClassificationOperation.html", "cl": 3, "ucl": 0, "cal": 3, "tl": 14, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
     ]},
@@ -241,52 +241,28 @@ var riskHotspotMetrics = [
 
 var riskHotspots = [
   {
-    "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationSqlGenerator", "reportPath": "EFCore.DataClassification_DataClassificationSqlGenerator.html", "methodName": "WriteDataClassification(Microsoft.EntityFrameworkCore.Migrations.MigrationCommandListBuilder,System.String,System.String,System.String,Microsoft.EntityFrameworkCore.Metadata.IProperty)", "methodShortName": "WriteDataClassification(...)", "fileIndex": 0, "line": 138,
-    "metrics": [
-      { "value": 702, "exceeded": true },
-      { "value": 26, "exceeded": true },
-    ]},
-  {
-    "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationMigrationsModelDiffer", "reportPath": "EFCore.DataClassification_DataClassificationMigrationsModelDiffer.html", "methodName": "Diff(Microsoft.EntityFrameworkCore.Metadata.IColumn,Microsoft.EntityFrameworkCore.Metadata.IColumn,Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationsModelDiffer/DiffContext)", "methodShortName": "Diff(...)", "fileIndex": 0, "line": 35,
-    "metrics": [
-      { "value": 420, "exceeded": true },
-      { "value": 20, "exceeded": true },
-    ]},
-  {
     "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationSqlGenerator", "reportPath": "EFCore.DataClassification_DataClassificationSqlGenerator.html", "methodName": "ValidateDataClassification(Microsoft.EntityFrameworkCore.Metadata.IProperty,System.String,System.String,System.String)", "methodShortName": "ValidateDataClassification(...)", "fileIndex": 0, "line": 376,
     "metrics": [
-      { "value": 210, "exceeded": true },
+      { "value": 51, "exceeded": true },
       { "value": 14, "exceeded": false },
     ]},
   {
-    "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationMigrationsModelDiffer", "reportPath": "EFCore.DataClassification_DataClassificationMigrationsModelDiffer.html", "methodName": "HasDataClassificationChanged(Microsoft.EntityFrameworkCore.Metadata.IColumn,Microsoft.EntityFrameworkCore.Metadata.IColumn)", "methodShortName": "HasDataClassificationChanged(...)", "fileIndex": 0, "line": 95,
+    "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationSqlGenerator", "reportPath": "EFCore.DataClassification_DataClassificationSqlGenerator.html", "methodName": "WriteDataClassification(Microsoft.EntityFrameworkCore.Migrations.MigrationCommandListBuilder,System.String,System.String,System.String,Microsoft.EntityFrameworkCore.Metadata.IProperty)", "methodShortName": "WriteDataClassification(...)", "fileIndex": 0, "line": 138,
     "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationMigrationsModelDiffer", "reportPath": "EFCore.DataClassification_DataClassificationMigrationsModelDiffer.html", "methodName": "HasAnnotationChanged(Microsoft.EntityFrameworkCore.Metadata.IProperty,Microsoft.EntityFrameworkCore.Metadata.IProperty,System.String)", "methodShortName": "HasAnnotationChanged(...)", "fileIndex": 0, "line": 107,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationSqlGenerator", "reportPath": "EFCore.DataClassification_DataClassificationSqlGenerator.html", "methodName": "Generate(Microsoft.EntityFrameworkCore.Migrations.Operations.CreateTableOperation,Microsoft.EntityFrameworkCore.Metadata.IModel,Microsoft.EntityFrameworkCore.Migrations.MigrationCommandListBuilder,System.Boolean)", "methodShortName": "Generate(...)", "fileIndex": 0, "line": 60,
-    "metrics": [
-      { "value": 52, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationSqlGenerator", "reportPath": "EFCore.DataClassification_DataClassificationSqlGenerator.html", "methodName": "Generate(Microsoft.EntityFrameworkCore.Migrations.Operations.AddColumnOperation,Microsoft.EntityFrameworkCore.Metadata.IModel,Microsoft.EntityFrameworkCore.Migrations.MigrationCommandListBuilder,System.Boolean)", "methodShortName": "Generate(...)", "fileIndex": 0, "line": 93,
-    "metrics": [
-      { "value": 34, "exceeded": true },
-      { "value": 10, "exceeded": false },
+      { "value": 26, "exceeded": false },
+      { "value": 26, "exceeded": true },
     ]},
   {
     "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationSqlGenerator", "reportPath": "EFCore.DataClassification_DataClassificationSqlGenerator.html", "methodName": "AppendSensitivityClassification(Microsoft.EntityFrameworkCore.Migrations.MigrationCommandListBuilder,System.String,System.String,System.String,System.String,System.String,System.String)", "methodShortName": "AppendSensitivityClassification(...)", "fileIndex": 0, "line": 322,
     "metrics": [
       { "value": 25, "exceeded": false },
       { "value": 24, "exceeded": true },
+    ]},
+  {
+    "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationMigrationsModelDiffer", "reportPath": "EFCore.DataClassification_DataClassificationMigrationsModelDiffer.html", "methodName": "Diff(Microsoft.EntityFrameworkCore.Metadata.IColumn,Microsoft.EntityFrameworkCore.Metadata.IColumn,Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationsModelDiffer/DiffContext)", "methodShortName": "Diff(...)", "fileIndex": 0, "line": 35,
+    "metrics": [
+      { "value": 29, "exceeded": false },
+      { "value": 20, "exceeded": true },
     ]},
   {
     "assembly": "EFCore.DataClassification", "class": "EFCore.DataClassification.Infrastructure.DataClassificationSqlGenerator", "reportPath": "EFCore.DataClassification_DataClassificationSqlGenerator.html", "methodName": "WriteDataClassification(Microsoft.EntityFrameworkCore.Migrations.MigrationCommandListBuilder,System.String,System.String,System.String,System.String,System.String,System.String,System.String)", "methodShortName": "WriteDataClassification(...)", "fileIndex": 0, "line": 189,

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -12,7 +12,6 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.22">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.22" />
@@ -33,7 +32,6 @@
 
   <ItemGroup>
     <Folder Include="Metadata\" />
-    <Folder Include="Migrations\" />
     <Folder Include="Exceptions\" />
     <Folder Include="Integration\" />
     <Folder Include="SqlGenerator\" />
