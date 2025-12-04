@@ -17,7 +17,7 @@ public class DataClassificationDesignTimeServicesTests {
         // Act
         dt.ConfigureDesignTimeServices(services);
 
-        // Assert (resolve yok, sadece kayıt kontrolü)
+        // Assert (non resolve only to avoid needing dependencies)
         Assert.Contains(services, d =>
             d.ServiceType == typeof(IMigrationsCodeGenerator) &&
             d.ImplementationType == typeof(DataClassificationMigrationsGenerator));

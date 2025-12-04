@@ -28,6 +28,6 @@ namespace EFCore.DataClassification.WebApi.Models {
         public List<Game> Games { get; set; }
 
         [DataClassification("Confidential", "Admin Reference", SensitivityRank.High)]
-        public int AdminId { get; set; }
+        public int? AdminId { get; set; }
     }
 }
