@@ -3,9 +3,8 @@
 namespace EFCore.DataClassification.Exceptions {
 
     /// <summary>
-    /// EFCore.DataClassification library'sinde
-    /// modeldeki yanlış / tutarsız DataClassification
-    /// konfigurasyonlarını temsil eden exception.
+    /// Exception that represents invalid or inconsistent
+    /// DataClassification configurations in the EF Core model.
     /// </summary>
     public sealed class DataClassificationException : InvalidOperationException {
         public IProperty? Property { get; }

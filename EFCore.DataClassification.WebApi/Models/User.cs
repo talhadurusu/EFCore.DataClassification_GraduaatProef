@@ -10,8 +10,8 @@ namespace EFCore.DataClassification.WebApi.Models {
 
         public string Surname { get; set; }
 
-        // TEST 1: Attribute 
-        [DataClassification("Private", "ev adresi", SensitivityRank.Medium)]
+        // TEST 1: Attribute-based classification
+        [DataClassification("Private", "Home Address", SensitivityRank.Medium)]
         public string Adress { get; set; }
 
      
@@ -21,7 +21,7 @@ namespace EFCore.DataClassification.WebApi.Models {
        
         public string PhoneNumber { get; set; }
 
-        [DataClassification("blablabla", "Salary blabla", SensitivityRank.High)]
+        [DataClassification("Confidential", "Financial Information", SensitivityRank.High)]
         public int Salary { get; set; }
 
         

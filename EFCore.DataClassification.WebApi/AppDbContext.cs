@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using EFCore.DataClassification.Extensions; // UseDataClassification ve HasDataClassification buradan gelir
-using EFCore.DataClassification.Models;     // SensitivityRank buradan gelir
-using EFCore.DataClassification.WebApi.Models; // User sınıfı buradan gelir
+using EFCore.DataClassification.Extensions;
+using EFCore.DataClassification.Models;
+using EFCore.DataClassification.WebApi.Models;
 
 namespace EFCore.DataClassification.WebApi;
 
@@ -15,10 +15,10 @@ public class AppDbContext : DbContext {
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
 
-        // 1. Senin kütüphaneni çalıştır (Attribute tarayıcı)
+        // 1. Scan and apply DataClassification attributes
         modelBuilder.UseDataClassification();
 
-      // 2.Fluent API Testi
+        // 2. Fluent API configuration example
         modelBuilder.Entity<User>()
             .Property(u => u.PhoneNumber)
             .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);

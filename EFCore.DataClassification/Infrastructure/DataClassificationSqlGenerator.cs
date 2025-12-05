@@ -10,10 +10,9 @@ using Microsoft.EntityFrameworkCore.Update;
 
 namespace EFCore.DataClassification.Infrastructure {
     /// <summary>
-    /// DataClassification annotation'larına göre
-    /// hem kendi extended property'lerimizi,
-    /// hem de SQL Server'ın resmi "sensitivity classification"
-    /// metadata'sını (ADD SENSITIVITY CLASSIFICATION) üreten generator.
+    /// SQL generator that produces both custom extended properties
+    /// and SQL Server's native sensitivity classification metadata
+    /// (ADD SENSITIVITY CLASSIFICATION) based on DataClassification annotations.
     /// </summary>
     public sealed class DataClassificationSqlGenerator : SqlServerMigrationsSqlGenerator {
 
@@ -91,7 +90,7 @@ namespace EFCore.DataClassification.Infrastructure {
         // 2) ADD COLUMN
     
         protected override void Generate(AddColumnOperation operation, IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
-            // Önce normal ALTER TABLE ADD
+            // First execute normal ALTER TABLE ADD
             base.Generate(operation, model, builder, terminate);
 
             if (model is null)
@@ -139,14 +138,14 @@ namespace EFCore.DataClassification.Infrastructure {
 
             var schemaName = schema ?? "dbo";
 
-            // Annotation'lardan değerleri oku
+            // Read values from annotations
             var label = property.FindAnnotation(DataClassificationConstants.Label)?.Value?.ToString();
             var infoType = property.FindAnnotation(DataClassificationConstants.InformationType)?.Value?.ToString();
             var rank = property.FindAnnotation(DataClassificationConstants.Rank)?.Value?.ToString();
 
             ValidateDataClassification(property,label,infoType,rank);
 
-            // Hiç veri yoksa, bu kolon için classification yok demektir
+            // If no data exists, this column has no classification
             if (string.IsNullOrWhiteSpace(label)
                 && string.IsNullOrWhiteSpace(infoType)
                 && string.IsNullOrWhiteSpace(rank)) {
