@@ -9,6 +9,8 @@ namespace EFCore.DataClassification.WebApi.Controllers;
 /// <summary>
 /// Controller for managing data classification metadata and reporting.
 /// Supports JSON/CSV export for NIS2/GDPR compliance audits.
+/// 
+/// Exception handling: GlobalExceptionHandler automatically catches all errors
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -34,18 +36,11 @@ public class DataClassificationController : ControllerBase
     /// <returns>List of all classified columns with their sensitivity information.</returns>
     [HttpGet("metadata")]
     [ProducesResponseType(typeof(IEnumerable<ClassificationMetadataDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAllClassifications()
     {
-        try
-        {
-            var classifications = await GetClassificationMetadataAsync();
-            return Ok(classifications);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to retrieve classification metadata");
-            return StatusCode(500, new { error = "Failed to retrieve classification metadata", details = ex.Message });
-        }
+        var classifications = await GetClassificationMetadataAsync();
+        return Ok(classifications);
     }
 
     /// <summary>
@@ -55,28 +50,21 @@ public class DataClassificationController : ControllerBase
     [HttpGet("metadata/export/csv")]
     [Produces("text/csv")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ExportAsCsv()
     {
-        try
+        var classifications = await GetClassificationMetadataAsync();
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Schema,Table,Column,Label,InformationType,Rank");
+
+        foreach (var c in classifications)
         {
-            var classifications = await GetClassificationMetadataAsync();
-
-            var csv = new StringBuilder();
-            csv.AppendLine("Schema,Table,Column,Label,InformationType,Rank");
-
-            foreach (var c in classifications)
-            {
-                csv.AppendLine($"{EscapeCsv(c.Schema)},{EscapeCsv(c.Table)},{EscapeCsv(c.Column)},{EscapeCsv(c.Label)},{EscapeCsv(c.InformationType)},{EscapeCsv(c.Rank)}");
-            }
-
-            var fileName = $"data-classifications-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
-            return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
+            csv.AppendLine($"{EscapeCsv(c.Schema)},{EscapeCsv(c.Table)},{EscapeCsv(c.Column)},{EscapeCsv(c.Label)},{EscapeCsv(c.InformationType)},{EscapeCsv(c.Rank)}");
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to export classifications as CSV");
-            return StatusCode(500, new { error = "Failed to export classifications", details = ex.Message });
-        }
+
+        var fileName = $"data-classifications-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+        return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
     }
 
     /// <summary>
@@ -84,23 +72,16 @@ public class DataClassificationController : ControllerBase
     /// </summary>
     [HttpGet("metadata/export/json")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ExportAsJson()
     {
-        try
-        {
-            var classifications = await GetClassificationMetadataAsync();
+        var classifications = await GetClassificationMetadataAsync();
 
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(classifications, options);
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        var json = JsonSerializer.Serialize(classifications, options);
 
-            var fileName = $"data-classifications-{DateTime.UtcNow:yyyyMMdd-HHmmss}.json";
-            return File(Encoding.UTF8.GetBytes(json), "application/json", fileName);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to export classifications as JSON");
-            return StatusCode(500, new { error = "Failed to export classifications", details = ex.Message });
-        }
+        var fileName = $"data-classifications-{DateTime.UtcNow:yyyyMMdd-HHmmss}.json";
+        return File(Encoding.UTF8.GetBytes(json), "application/json", fileName);
     }
 
     /// <summary>
@@ -109,20 +90,13 @@ public class DataClassificationController : ControllerBase
     /// <param name="rank">Sensitivity rank: None, Low, Medium, High, Critical</param>
     [HttpGet("metadata/by-rank/{rank}")]
     [ProducesResponseType(typeof(IEnumerable<ClassificationMetadataDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetByRank(string rank)
     {
-        try
-        {
-            var classifications = await GetClassificationMetadataAsync();
-            var filtered = classifications.Where(c =>
-                c.Rank != null && c.Rank.Equals(rank, StringComparison.OrdinalIgnoreCase));
-            return Ok(filtered);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to filter classifications by rank: {Rank}", rank);
-            return StatusCode(500, new { error = "Failed to filter classifications", details = ex.Message });
-        }
+        var classifications = await GetClassificationMetadataAsync();
+        var filtered = classifications.Where(c =>
+            c.Rank != null && c.Rank.Equals(rank, StringComparison.OrdinalIgnoreCase));
+        return Ok(filtered);
     }
 
     /// <summary>
@@ -131,20 +105,13 @@ public class DataClassificationController : ControllerBase
     /// <param name="infoType">Information type (e.g., "Email Address", "Phone Number")</param>
     [HttpGet("metadata/by-info-type/{infoType}")]
     [ProducesResponseType(typeof(IEnumerable<ClassificationMetadataDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetByInformationType(string infoType)
     {
-        try
-        {
-            var classifications = await GetClassificationMetadataAsync();
-            var filtered = classifications.Where(c =>
-                c.InformationType != null && c.InformationType.Contains(infoType, StringComparison.OrdinalIgnoreCase));
-            return Ok(filtered);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to filter classifications by info type: {InfoType}", infoType);
-            return StatusCode(500, new { error = "Failed to filter classifications", details = ex.Message });
-        }
+        var classifications = await GetClassificationMetadataAsync();
+        var filtered = classifications.Where(c =>
+            c.InformationType != null && c.InformationType.Contains(infoType, StringComparison.OrdinalIgnoreCase));
+        return Ok(filtered);
     }
 
     /// <summary>
@@ -153,33 +120,26 @@ public class DataClassificationController : ControllerBase
     /// </summary>
     [HttpGet("metadata/summary")]
     [ProducesResponseType(typeof(ClassificationSummaryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetSummary()
     {
-        try
-        {
-            var classifications = (await GetClassificationMetadataAsync()).ToList();
+        var classifications = (await GetClassificationMetadataAsync()).ToList();
 
-            var summary = new ClassificationSummaryDto
-            {
-                TotalClassifiedColumns = classifications.Count,
-                ByRank = classifications
-                    .GroupBy(c => c.Rank ?? "Unknown")
-                    .Select(g => new RankCountDto { Rank = g.Key, Count = g.Count() })
-                    .OrderByDescending(r => r.Count),
-                ByInformationType = classifications
-                    .GroupBy(c => c.InformationType ?? "Unknown")
-                    .Select(g => new InfoTypeCountDto { InformationType = g.Key, Count = g.Count() })
-                    .OrderByDescending(i => i.Count),
-                GeneratedAt = DateTime.UtcNow
-            };
-
-            return Ok(summary);
-        }
-        catch (Exception ex)
+        var summary = new ClassificationSummaryDto
         {
-            _logger.LogError(ex, "Failed to generate classification summary");
-            return StatusCode(500, new { error = "Failed to generate summary", details = ex.Message });
-        }
+            TotalClassifiedColumns = classifications.Count,
+            ByRank = classifications
+                .GroupBy(c => c.Rank ?? "Unknown")
+                .Select(g => new RankCountDto { Rank = g.Key, Count = g.Count() })
+                .OrderByDescending(r => r.Count),
+            ByInformationType = classifications
+                .GroupBy(c => c.InformationType ?? "Unknown")
+                .Select(g => new InfoTypeCountDto { InformationType = g.Key, Count = g.Count() })
+                .OrderByDescending(i => i.Count),
+            GeneratedAt = DateTime.UtcNow
+        };
+
+        return Ok(summary);
     }
 
     /// <summary>
@@ -188,20 +148,13 @@ public class DataClassificationController : ControllerBase
     /// <param name="tableName">Name of the database table</param>
     [HttpGet("metadata/by-table/{tableName}")]
     [ProducesResponseType(typeof(IEnumerable<ClassificationMetadataDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetByTable(string tableName)
     {
-        try
-        {
-            var classifications = await GetClassificationMetadataAsync();
-            var filtered = classifications.Where(c =>
-                c.Table.Equals(tableName, StringComparison.OrdinalIgnoreCase));
-            return Ok(filtered);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to filter classifications by table: {TableName}", tableName);
-            return StatusCode(500, new { error = "Failed to filter classifications", details = ex.Message });
-        }
+        var classifications = await GetClassificationMetadataAsync();
+        var filtered = classifications.Where(c =>
+            c.Table.Equals(tableName, StringComparison.OrdinalIgnoreCase));
+        return Ok(filtered);
     }
 
     // EXTENDED PROPERTIES QUERIES
@@ -213,18 +166,11 @@ public class DataClassificationController : ControllerBase
     /// </summary>
     [HttpGet("extended-properties")]
     [ProducesResponseType(typeof(IEnumerable<ClassificationMetadataDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetExtendedProperties()
     {
-        try
-        {
-            var properties = await GetExtendedPropertiesAsync();
-            return Ok(properties);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to retrieve extended properties");
-            return StatusCode(500, new { error = "Failed to retrieve extended properties", details = ex.Message });
-        }
+        var properties = await GetExtendedPropertiesAsync();
+        return Ok(properties);
     }
 
 

@@ -1,3 +1,4 @@
+using AutoMapper;
 using EFCore.DataClassification.WebApi.DTOs;
 using EFCore.DataClassification.WebApi.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +17,13 @@ public class UsersController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly ILogger<UsersController> _logger;
+    private readonly IMapper _mapper;
 
-    public UsersController(AppDbContext context, ILogger<UsersController> logger)
+    public UsersController(AppDbContext context, ILogger<UsersController> logger, IMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -31,11 +34,9 @@ public class UsersController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<UserResponseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
     {
-        var users = await _context.Users
-            .Select(u => MapToDto(u))
-            .ToListAsync();
-
-        return Ok(users);
+        var users = await _context.Users.ToListAsync();
+        var dtos = _mapper.Map<List<UserResponseDto>>(users);
+        return Ok(dtos);
     }
 
     /// <summary>
@@ -52,7 +53,8 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound(new { error = $"User with ID {id} not found" });
 
-        return Ok(MapToDto(user));
+        var dto = _mapper.Map<UserResponseDto>(user);
+        return Ok(dto);
     }
 
     /// <summary>
@@ -68,23 +70,15 @@ public class UsersController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var user = new User
-        {
-            Name = dto.Name,
-            Surname = dto.Surname,
-            Adress = dto.Address ?? string.Empty,      // Classified: Medium - Home Address
-            Email = dto.Email ?? string.Empty,
-            PhoneNumber = dto.PhoneNumber ?? string.Empty, // Classified: High - Phone Number
-            Salary = dto.Salary ?? 0,                  // Classified: High - Financial
-            AdminId = dto.AdminId
-        };
+        var user = _mapper.Map<User>(dto);
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Created user {UserId} with classified data", user.Id);
 
-        return CreatedAtAction(nameof(GetById), new { id = user.Id }, MapToDto(user));
+        var responseDto = _mapper.Map<UserResponseDto>(user);
+        return CreatedAtAction(nameof(GetById), new { id = user.Id }, responseDto);
     }
 
     /// <summary>
@@ -106,20 +100,15 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound(new { error = $"User with ID {id} not found" });
 
-        // Update only provided fields
-        if (dto.Name != null) user.Name = dto.Name;
-        if (dto.Surname != null) user.Surname = dto.Surname;
-        if (dto.Address != null) user.Adress = dto.Address;
-        if (dto.Email != null) user.Email = dto.Email;
-        if (dto.PhoneNumber != null) user.PhoneNumber = dto.PhoneNumber;
-        if (dto.Salary.HasValue) user.Salary = dto.Salary.Value;
-        if (dto.AdminId.HasValue) user.AdminId = dto.AdminId.Value;
+        // AutoMapper handles null checks automatically (configured in profile)
+        _mapper.Map(dto, user);
 
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Updated user {UserId}", user.Id);
 
-        return Ok(MapToDto(user));
+        var responseDto = _mapper.Map<UserResponseDto>(user);
+        return Ok(responseDto);
     }
 
     /// <summary>
@@ -154,10 +143,10 @@ public class UsersController : ControllerBase
     {
         var users = await _context.Users
             .Where(u => u.AdminId == adminId)
-            .Select(u => MapToDto(u))
             .ToListAsync();
 
-        return Ok(users);
+        var dtos = _mapper.Map<List<UserResponseDto>>(users);
+        return Ok(dtos);
     }
 
     /// <summary>
@@ -173,26 +162,11 @@ public class UsersController : ControllerBase
 
         var users = await _context.Users
             .Where(u => u.Name.Contains(query) || u.Surname.Contains(query))
-            .Select(u => MapToDto(u))
             .ToListAsync();
 
-        return Ok(users);
+        var dtos = _mapper.Map<List<UserResponseDto>>(users);
+        return Ok(dtos);
     }
-
-    /// <summary>
-    /// Maps User entity to response DTO.
-    /// </summary>
-    private static UserResponseDto MapToDto(User user) => new()
-    {
-        Id = user.Id,
-        Name = user.Name,
-        Surname = user.Surname,
-        Address = user.Adress,
-        Email = user.Email,
-        PhoneNumber = user.PhoneNumber,
-        Salary = user.Salary,
-        AdminId = user.AdminId
-    };
 }
 
 

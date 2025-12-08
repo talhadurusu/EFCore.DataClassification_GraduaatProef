@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     /// <inheritdoc />
-    public partial class adminhasdc : Migration
+    public partial class gamenadminchange : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,8 +15,48 @@ namespace EFCore.DataClassification.WebApi.Migrations
             migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
             {
                 Schema = null,
+                Table = "Games",
+                Column = "PublisherUnikeUnitID"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "PublisherUnikeUnitID",
+                Label = "Very Confidential",
+                InformationType = "Publisher Unique Unit ID",
+                Rank = "Medium",
+                PropertyDisplayName = "Game.PublisherUnikeUnitID"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "Description"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "Description",
+                Label = "Confidential",
+                InformationType = "Game Story",
+                Rank = "Low",
+                PropertyDisplayName = "Game.Description"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
+            {
+                Schema = null,
                 Table = "Admins",
-                Column = "Name"
+                Column = "Email"
             })
             ;
 
@@ -24,11 +64,55 @@ namespace EFCore.DataClassification.WebApi.Migrations
             {
                 Schema = null,
                 Table = "Admins",
-                Column = "Name",
+                Column = "Email",
+                Label = null,
+                InformationType = null,
+                Rank = null,
+                PropertyDisplayName = "Admin.Email"
+            })
+            ;
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "PublisherUnikeUnitID"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "PublisherUnikeUnitID",
                 Label = "Confidential",
-                InformationType = "Admin Name",
+                InformationType = "Publisher Unique Unit ID",
                 Rank = "Medium",
-                PropertyDisplayName = "Admin.Name"
+                PropertyDisplayName = "EFCore.DataClassification.WebApi.Models.Game (Dictionary<string, object>).PublisherUnikeUnitID"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "Description"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "Description",
+                Label = "Confidential",
+                InformationType = "Game Description",
+                Rank = "Low",
+                PropertyDisplayName = "EFCore.DataClassification.WebApi.Models.Game (Dictionary<string, object>).Description"
             })
             ;
 
@@ -48,91 +132,7 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Confidential",
                 InformationType = "Email Address",
                 Rank = "High",
-                PropertyDisplayName = "Admin.Email"
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Admins",
-                Column = "Adminkey"
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Admins",
-                Column = "Adminkey",
-                Label = "Highly Confidential",
-                InformationType = "Admin Key",
-                Rank = "Critical",
-                PropertyDisplayName = "Admin.Adminkey"
-            })
-            ;
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Admins",
-                Column = "Name"
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Admins",
-                Column = "Name",
-                Label = null,
-                InformationType = null,
-                Rank = null,
-                PropertyDisplayName = "EFCore.DataClassification.WebApi.Models.Admin (Dictionary<string, object>).Name"
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Admins",
-                Column = "Email"
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Admins",
-                Column = "Email",
-                Label = null,
-                InformationType = null,
-                Rank = null,
                 PropertyDisplayName = "EFCore.DataClassification.WebApi.Models.Admin (Dictionary<string, object>).Email"
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Admins",
-                Column = "Adminkey"
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Admins",
-                Column = "Adminkey",
-                Label = null,
-                InformationType = null,
-                Rank = null,
-                PropertyDisplayName = "EFCore.DataClassification.WebApi.Models.Admin (Dictionary<string, object>).Adminkey"
             })
             ;
         }

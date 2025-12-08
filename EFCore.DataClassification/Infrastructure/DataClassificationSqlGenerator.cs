@@ -1,4 +1,4 @@
-﻿using EFCore.DataClassification.Annotations;
+using EFCore.DataClassification.Annotations;
 using EFCore.DataClassification.Exceptions;
 using EFCore.DataClassification.Operations;
 using Microsoft.EntityFrameworkCore;
@@ -39,13 +39,13 @@ namespace EFCore.DataClassification.Infrastructure {
                         create.PropertyDisplayName);
                     return;
 
-                case RemoveDataClassificationOperation remove:
-                    ClearDataClassification(
-                        builder,
-                        remove.Schema ?? "dbo",
-                        remove.Table,
-                        remove.Column);
-                    return;
+            case RemoveDataClassificationOperation remove:
+                ClearDataClassification(
+                    builder,
+                    remove.Schema ?? DataClassificationConstants.DefaultSchema,
+                    remove.Table,
+                    remove.Column);
+                return;
             }
 
             base.Generate(operation, model, builder);
@@ -120,7 +120,7 @@ namespace EFCore.DataClassification.Infrastructure {
         // 4) DROP COLUMN
      
         protected override void Generate(DropColumnOperation operation,IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
-            var schemaName = operation.Schema ?? "dbo";
+            var schemaName = operation.Schema ?? DataClassificationConstants.DefaultSchema;
 
             
             ClearDataClassification(builder,schemaName,operation.Table,operation.Name);
@@ -134,49 +134,31 @@ namespace EFCore.DataClassification.Infrastructure {
 
         #region Orchestrator helpers (Write / Clear)
         
+        /// <summary>
+        /// Writes data classification from EF Core property annotations
+        /// </summary>
         private void WriteDataClassification(MigrationCommandListBuilder builder,string? schema,string tableName,string columnName,IProperty property) {
 
-            var schemaName = schema ?? "dbo";
+            var schemaName = schema ?? DataClassificationConstants.DefaultSchema;
 
-            // Read values from annotations
+            // Extract annotation values
             var label = property.FindAnnotation(DataClassificationConstants.Label)?.Value?.ToString();
-            var infoType = property.FindAnnotation(DataClassificationConstants.InformationType)?.Value?.ToString();
+            var informationType = property.FindAnnotation(DataClassificationConstants.InformationType)?.Value?.ToString();
             var rank = property.FindAnnotation(DataClassificationConstants.Rank)?.Value?.ToString();
 
-            ValidateDataClassification(property,label,infoType,rank);
+            // Validate before processing
+            ValidateDataClassification(property,label,informationType,rank);
 
-            // If no data exists, this column has no classification
-            if (string.IsNullOrWhiteSpace(label)
-                && string.IsNullOrWhiteSpace(infoType)
-                && string.IsNullOrWhiteSpace(rank)) {
-                return;
-            }
-
-            // 1) Senin kendi extended property'lerin (DataClassification:*)
-            if (!string.IsNullOrWhiteSpace(label)) {
-                AppendExtendedProperty(
-                    builder,schemaName,tableName,columnName,
-                    DataClassificationConstants.Label, label);
-            }
-
-            if (!string.IsNullOrWhiteSpace(infoType)) {
-                AppendExtendedProperty(
-                    builder,schemaName,tableName,columnName,
-                    DataClassificationConstants.InformationType,infoType);
-            }
-
-            if (!string.IsNullOrWhiteSpace(rank)) {
-                AppendExtendedProperty(
-                    builder,schemaName,tableName,columnName,
-                    DataClassificationConstants.Rank,rank);
-            }
-
-            // 2) SQL Server sensitivity classification
-            AppendSensitivityClassification(
-                builder,schemaName,tableName,columnName,
-                label,infoType,rank);
+            // Delegate to core implementation
+            WriteDataClassificationCore(builder, schemaName, tableName, columnName, label, informationType, rank);
         }
 
+        /// <summary>
+        /// Writes data classification from explicit string parameters
+        /// </summary>
+        /// <remarks>
+        /// Used for custom migration operations (CreateDataClassificationOperation)
+        /// </remarks>
         private void WriteDataClassification(
            MigrationCommandListBuilder builder,
            string? schema,
@@ -187,30 +169,14 @@ namespace EFCore.DataClassification.Infrastructure {
            string? rank,
            string? propertyDisplayName) {
 
-            var schemaName = schema ?? "dbo";
+            var schemaName = schema ?? DataClassificationConstants.DefaultSchema;
             var targetName = propertyDisplayName ?? $"{schemaName}.{table}.{column}";
 
+            // Validate before processing
             ValidateDataClassification(targetName, label, informationType, rank);
 
-            if (string.IsNullOrWhiteSpace(label)
-                && string.IsNullOrWhiteSpace(informationType)
-                && string.IsNullOrWhiteSpace(rank)) {
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(label)) {
-                AppendExtendedProperty(builder, schemaName, table, column, DataClassificationConstants.Label, label);
-            }
-
-            if (!string.IsNullOrWhiteSpace(informationType)) {
-                AppendExtendedProperty(builder, schemaName, table, column, DataClassificationConstants.InformationType, informationType);
-            }
-
-            if (!string.IsNullOrWhiteSpace(rank)) {
-                AppendExtendedProperty(builder, schemaName, table, column, DataClassificationConstants.Rank, rank);
-            }
-
-            AppendSensitivityClassification(builder, schemaName, table, column, label, informationType, rank);
+            // Delegate to core implementation
+            WriteDataClassificationCore(builder, schemaName, table, column, label, informationType, rank);
         }
 
         private void ClearDataClassification(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName) {
@@ -379,8 +345,6 @@ namespace EFCore.DataClassification.Infrastructure {
                 return;
             }
 
-            var allowedRanks = new[] { "None", "Low", "Medium", "High", "Critical" };
-
             static string GetEntityName(IProperty p) {
                 if (p.DeclaringType is IEntityType entityType) {
                     return entityType.DisplayName();
@@ -389,24 +353,24 @@ namespace EFCore.DataClassification.Infrastructure {
                 return p.DeclaringType.Name;
             }
 
-            if (!string.IsNullOrWhiteSpace(rank) && !allowedRanks.Contains(rank)) {
+            if (!string.IsNullOrWhiteSpace(rank) && !DataClassificationConstants.IsValidRank(rank)) {
                 var entityName = GetEntityName(property);
                 var propertyName = property.Name;
 
                 throw new DataClassificationException(
                     property,
                     $"Invalid DataClassification Rank '{rank}' on property '{entityName}.{propertyName}'. " +
-                    $"Allowed values: {string.Join(", ", allowedRanks)}.");
+                    $"Allowed values: {DataClassificationConstants.GetAllowedRanksString()}.");
             }
 
-            if (label?.Length > 128) {
+            if (label?.Length > DataClassificationConstants.MaxLabelLength) {
                 var entityName = GetEntityName(property);
                 var propertyName = property.Name;
 
                 throw new DataClassificationException(
                     property,
                     $"DataClassification Label on '{entityName}.{propertyName}' is too long " +
-                    $"{label.Length} chars, max 128.");
+                    $"({label.Length} chars, max {DataClassificationConstants.MaxLabelLength}).");
             }
         }
 
@@ -417,19 +381,70 @@ namespace EFCore.DataClassification.Infrastructure {
                 return;
             }
 
-            var allowedRanks = new[] { "None", "Low", "Medium", "High", "Critical" };
-
-            if (!string.IsNullOrWhiteSpace(rank) && !allowedRanks.Contains(rank)) {
+            if (!string.IsNullOrWhiteSpace(rank) && !DataClassificationConstants.IsValidRank(rank)) {
                 throw new DataClassificationException(
-                    $"Invalid DataClassification Rank '{rank}' on property '{targetName}'. Allowed values: {string.Join(", ", allowedRanks)}.");
+                    $"Invalid DataClassification Rank '{rank}' on property '{targetName}'. " +
+                    $"Allowed values: {DataClassificationConstants.GetAllowedRanksString()}.");
             }
 
-            if (label?.Length > 128) {
+            if (label?.Length > DataClassificationConstants.MaxLabelLength) {
                 throw new DataClassificationException(
-                    $"DataClassification Label on '{targetName}' is too long ({label.Length} chars, max 128).");
+                    $"DataClassification Label on '{targetName}' is too long " +
+                    $"({label.Length} chars, max {DataClassificationConstants.MaxLabelLength}).");
             }
         }
 
+
+        /// <summary>
+        /// Core logic for writing data classification metadata.
+        /// Both public overloads delegate to this method to avoid code duplication.
+        /// </summary>
+        /// <remarks>
+        /// This method:
+        /// 1. Checks if any classification data exists (early return if empty)
+        /// 2. Writes extended properties for each classification component
+        /// 3. Writes SQL Server native sensitivity classification
+        /// </remarks>
+        private void WriteDataClassificationCore(
+            MigrationCommandListBuilder builder,
+            string schemaName,
+            string tableName,
+            string columnName,
+            string? label,
+            string? informationType,
+            string? rank) {
+
+            // Early return if no classification data
+            if (string.IsNullOrWhiteSpace(label)
+                && string.IsNullOrWhiteSpace(informationType)
+                && string.IsNullOrWhiteSpace(rank)) {
+                return;
+            }
+
+            // Write extended properties
+            if (!string.IsNullOrWhiteSpace(label)) {
+                AppendExtendedProperty(
+                    builder, schemaName, tableName, columnName,
+                    DataClassificationConstants.Label, label);
+            }
+
+            if (!string.IsNullOrWhiteSpace(informationType)) {
+                AppendExtendedProperty(
+                    builder, schemaName, tableName, columnName,
+                    DataClassificationConstants.InformationType, informationType);
+            }
+
+            if (!string.IsNullOrWhiteSpace(rank)) {
+                AppendExtendedProperty(
+                    builder, schemaName, tableName, columnName,
+                    DataClassificationConstants.Rank, rank);
+            }
+
+            // Write SQL Server sensitivity classification
+            AppendSensitivityClassification(
+                builder, schemaName, tableName, columnName,
+                label, informationType, rank);
+        }
 
         #endregion
     }

@@ -13,8 +13,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251128105451_gamehasnodc")]
-    partial class gamehasnodc
+    [Migration("20251208104832_initialcreate")]
+    partial class initialcreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -36,20 +36,23 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.Property<int>("Adminkey")
                         .HasColumnType("int")
-                        .HasAnnotation("DataClassification:InformationType", "Security Info")
-                        .HasAnnotation("DataClassification:Label", "Private")
+                        .HasAnnotation("DataClassification:InformationType", "Admin Sleutel")
+                        .HasAnnotation("DataClassification:Label", "Highly Confidential")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Contact Info")
-                        .HasAnnotation("DataClassification:Label", "Private")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
+                        .HasAnnotation("DataClassification:InformationType", "Email Address")
+                        .HasAnnotation("DataClassification:Label", "Confidential")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Admin Naam")
+                        .HasAnnotation("DataClassification:Label", "Confidential")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
 
                     b.HasKey("Id");
 
@@ -66,7 +69,10 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Game Description")
+                        .HasAnnotation("DataClassification:Label", "Confidential")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
 
                     b.Property<string>("Genre")
                         .IsRequired()
@@ -77,7 +83,10 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.Property<string>("PublisherUnikeUnitID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Publisher Unique Unit ID")
+                        .HasAnnotation("DataClassification:Label", "Confidential")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
 
                     b.Property<DateTime>("ReleaseDate")
                         .HasColumnType("datetime2");
@@ -93,7 +102,7 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Game");
+                    b.ToTable("Games");
                 });
 
             modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.User", b =>
@@ -104,19 +113,22 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AdminId")
+                        .HasColumnType("int")
+                        .HasAnnotation("DataClassification:InformationType", "Admin Reference")
+                        .HasAnnotation("DataClassification:Label", "Confidential")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
+
                     b.Property<string>("Adress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "huis adress")
+                        .HasAnnotation("DataClassification:InformationType", "Home Address")
                         .HasAnnotation("DataClassification:Label", "Private")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Contact Info")
-                        .HasAnnotation("DataClassification:Label", "Public")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -131,8 +143,8 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.Property<int>("Salary")
                         .HasColumnType("int")
-                        .HasAnnotation("DataClassification:InformationType", "Salary blabla")
-                        .HasAnnotation("DataClassification:Label", "blablabla")
+                        .HasAnnotation("DataClassification:InformationType", "Financial Information")
+                        .HasAnnotation("DataClassification:Label", "Confidential")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
                     b.Property<string>("Surname")
@@ -140,6 +152,8 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AdminId");
 
                     b.ToTable("Users");
                 });
@@ -149,6 +163,20 @@ namespace EFCore.DataClassification.WebApi.Migrations
                     b.HasOne("EFCore.DataClassification.WebApi.Models.User", null)
                         .WithMany("Games")
                         .HasForeignKey("UserId");
+                });
+
+            modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.User", b =>
+                {
+                    b.HasOne("EFCore.DataClassification.WebApi.Models.Admin", "Admin")
+                        .WithMany("Users")
+                        .HasForeignKey("AdminId");
+
+                    b.Navigation("Admin");
+                });
+
+            modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.Admin", b =>
+                {
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.User", b =>

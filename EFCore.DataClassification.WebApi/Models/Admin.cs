@@ -1,17 +1,19 @@
-﻿using EFCore.DataClassification.Attributes;
+using EFCore.DataClassification.Attributes;
 using EFCore.DataClassification.Models;
 
 namespace EFCore.DataClassification.WebApi.Models {
     public class Admin {
         public int Id { get; set; }
-        [DataClassification("Confidential", "Admin Name", SensitivityRank.Medium)]
-        public string Name { get; set; }
-        [DataClassification("Confidential", "Email Address", SensitivityRank.High)]
-        public string Email { get; set; }
-        [DataClassification("Highly Confidential", "Admin Key", SensitivityRank.Critical)]
+        
+        [DataClassification("Confidential", "Admin Naam", SensitivityRank.Medium)]
+        public string Name { get; set; } = string.Empty;
+        
+       
+        public string Email { get; set; } = string.Empty;
+        
+        [DataClassification("Highly Confidential", "Admin Sleutel", SensitivityRank.Critical)]
         public int Adminkey { get; set; }
 
-        [DataClassification("Confidential", "Associated Users", SensitivityRank.Medium)]
-        public List<User> Users { get; set; } = [];
+        public ICollection<User> Users { get; set; } = new List<User>();
     }
 }
