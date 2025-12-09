@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     /// <inheritdoc />
-    public partial class initialcreate : Migration
+    public partial class firstcreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -85,6 +85,102 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 name: "IX_Users_AdminId",
                 table: "Users",
                 column: "AdminId");
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Admins",
+                Column = "Adminkey",
+                Label = "Highly Confidential",
+                InformationType = "Admin Sleutel",
+                Rank = "Critical",
+                PropertyDisplayName = "Admin.Adminkey"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Admins",
+                Column = "Name",
+                Label = "Confidential",
+                InformationType = "Admin Naam",
+                Rank = "Medium",
+                PropertyDisplayName = "Admin.Name"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "Description",
+                Label = "Confidential",
+                InformationType = "Game Story",
+                Rank = "Low",
+                PropertyDisplayName = "Game.Description"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "PublisherUnikeUnitID",
+                Label = "Very Confidential",
+                InformationType = "Publisher Unique Unit ID",
+                Rank = "Medium",
+                PropertyDisplayName = "Game.PublisherUnikeUnitID"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Users",
+                Column = "AdminId",
+                Label = "Confidential",
+                InformationType = "Admin Reference",
+                Rank = "High",
+                PropertyDisplayName = "User.AdminId"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Users",
+                Column = "Adress",
+                Label = "Private",
+                InformationType = "Home Address",
+                Rank = "Medium",
+                PropertyDisplayName = "User.Adress"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Users",
+                Column = "PhoneNumber",
+                Label = "Internal",
+                InformationType = "Phone Number",
+                Rank = "High",
+                PropertyDisplayName = "User.PhoneNumber"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Users",
+                Column = "Salary",
+                Label = "Confidential",
+                InformationType = "Financial Information",
+                Rank = "High",
+                PropertyDisplayName = "User.Salary"
+            })
+            ;
         }
 
         /// <inheritdoc />

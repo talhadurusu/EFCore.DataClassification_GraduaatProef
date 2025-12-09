@@ -19,14 +19,13 @@ namespace EFCore.DataClassification.WebApi {
 
             });
             
-            // Exception handling
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
             builder.Services.AddProblemDetails();
 
-            // AutoMapper
+         
             builder.Services.AddAutoMapper(cfg =>
             {
-                cfg.AddProfile<UserMappingProfile>(); // profilini elle ekliyoruz
+                cfg.AddProfile<UserMappingProfile>(); 
             });
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

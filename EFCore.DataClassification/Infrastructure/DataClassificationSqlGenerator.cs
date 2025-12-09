@@ -51,108 +51,9 @@ namespace EFCore.DataClassification.Infrastructure {
             base.Generate(operation, model, builder);
         }
 
-        #region Generate overrides (Create / Add / Alter / Drop)
-
-        // 1) CREATE TABLE
-
-
-        protected override void Generate(CreateTableOperation operation,IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
-         
-            base.Generate(operation, model, builder, terminate);
-
-            if (model is null)
-                return;
-
-            var relationalModel = model.GetRelationalModel();
-            var table = relationalModel.FindTable(operation.Name, operation.Schema);
-            if (table is null)
-                return;
-
-            foreach (var columnOp in operation.Columns) {
-                var column = table.FindColumn(columnOp.Name);
-                if (column is null)
-                    continue;
-
-                var property = column.PropertyMappings.FirstOrDefault()?.Property;
-                if (property is null)
-                    continue;
-
-                WriteDataClassification(
-                    builder,
-                    operation.Schema,
-                    operation.Name,
-                    columnOp.Name,
-                    property);
-            }
-        }
-
-        
-        // 2) ADD COLUMN
-    
-        protected override void Generate(AddColumnOperation operation, IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
-            // First execute normal ALTER TABLE ADD
-            base.Generate(operation, model, builder, terminate);
-
-            if (model is null)
-                return;
-
-            var relationalModel = model.GetRelationalModel();
-            var table = relationalModel.FindTable(operation.Table, operation.Schema);
-            if (table is null)
-                return;
-
-            var column = table.FindColumn(operation.Name);
-            if (column is null)
-                return;
-
-            var property = column.PropertyMappings.FirstOrDefault()?.Property;
-            if (property is null)
-                return;
-
-            WriteDataClassification(
-                builder,
-                operation.Schema,
-                operation.Table,
-                operation.Name,
-                property);
-        }
-
-        // 4) DROP COLUMN
-     
-        protected override void Generate(DropColumnOperation operation,IModel? model,MigrationCommandListBuilder builder,bool terminate = true) {
-            var schemaName = operation.Schema ?? DataClassificationConstants.DefaultSchema;
-
-            
-            ClearDataClassification(builder,schemaName,operation.Table,operation.Name);
-
-       
-            base.Generate(operation,model,builder,terminate);
-        }
-
-        #endregion
-
 
         #region Orchestrator helpers (Write / Clear)
-        
-        /// <summary>
-        /// Writes data classification from EF Core property annotations
-        /// </summary>
-        private void WriteDataClassification(MigrationCommandListBuilder builder,string? schema,string tableName,string columnName,IProperty property) {
-
-            var schemaName = schema ?? DataClassificationConstants.DefaultSchema;
-
-            // Extract annotation values
-            var label = property.FindAnnotation(DataClassificationConstants.Label)?.Value?.ToString();
-            var informationType = property.FindAnnotation(DataClassificationConstants.InformationType)?.Value?.ToString();
-            var rank = property.FindAnnotation(DataClassificationConstants.Rank)?.Value?.ToString();
-
-            // Validate before processing
-            ValidateDataClassification(property,label,informationType,rank);
-
-            // Delegate to core implementation
-            WriteDataClassificationCore(builder, schemaName, tableName, columnName, label, informationType, rank);
-        }
-
+     
         /// <summary>
         /// Writes data classification from explicit string parameters
         /// </summary>
@@ -197,6 +98,58 @@ namespace EFCore.DataClassification.Infrastructure {
 
         #endregion
 
+        #region Core logic
+        /// <summary>
+        /// Core logic for writing data classification metadata..
+        /// </summary>
+        /// <remarks>
+        /// This method:
+        /// 1. Checks if any classification data exists (early return if empty)
+        /// 2. Writes extended properties for each classification component
+        /// 3. Writes SQL Server native sensitivity classification
+        /// </remarks>
+        /// 
+        private void WriteDataClassificationCore(
+            MigrationCommandListBuilder builder,
+            string schemaName,
+            string tableName,
+            string columnName,
+            string? label,
+            string? informationType,
+            string? rank) {
+
+            // Early return if no classification data
+            if (string.IsNullOrWhiteSpace(label)
+                && string.IsNullOrWhiteSpace(informationType)
+                && string.IsNullOrWhiteSpace(rank)) {
+                return;
+            }
+
+            // Write extended properties
+            if (!string.IsNullOrWhiteSpace(label)) {
+                AppendExtendedProperty(
+                    builder, schemaName, tableName, columnName,
+                    DataClassificationConstants.Label, label);
+            }
+
+            if (!string.IsNullOrWhiteSpace(informationType)) {
+                AppendExtendedProperty(
+                    builder, schemaName, tableName, columnName,
+                    DataClassificationConstants.InformationType, informationType);
+            }
+
+            if (!string.IsNullOrWhiteSpace(rank)) {
+                AppendExtendedProperty(
+                    builder, schemaName, tableName, columnName,
+                    DataClassificationConstants.Rank, rank);
+            }
+
+            // Write SQL Server sensitivity classification
+            AppendSensitivityClassification(
+                builder, schemaName, tableName, columnName,
+                label, informationType, rank);
+        }
+        #endregion
 
         #region Extended property helpers
 
@@ -336,44 +289,6 @@ namespace EFCore.DataClassification.Infrastructure {
 
         #endregion
 
-        #region Validation
-
-        private static void ValidateDataClassification(IProperty property, string? label, string? informationType, string? rank) {
-            if (string.IsNullOrWhiteSpace(label)
-                && string.IsNullOrWhiteSpace(informationType)
-                && string.IsNullOrWhiteSpace(rank)) {
-                return;
-            }
-
-            static string GetEntityName(IProperty p) {
-                if (p.DeclaringType is IEntityType entityType) {
-                    return entityType.DisplayName();
-                }
-
-                return p.DeclaringType.Name;
-            }
-
-            if (!string.IsNullOrWhiteSpace(rank) && !DataClassificationConstants.IsValidRank(rank)) {
-                var entityName = GetEntityName(property);
-                var propertyName = property.Name;
-
-                throw new DataClassificationException(
-                    property,
-                    $"Invalid DataClassification Rank '{rank}' on property '{entityName}.{propertyName}'. " +
-                    $"Allowed values: {DataClassificationConstants.GetAllowedRanksString()}.");
-            }
-
-            if (label?.Length > DataClassificationConstants.MaxLabelLength) {
-                var entityName = GetEntityName(property);
-                var propertyName = property.Name;
-
-                throw new DataClassificationException(
-                    property,
-                    $"DataClassification Label on '{entityName}.{propertyName}' is too long " +
-                    $"({label.Length} chars, max {DataClassificationConstants.MaxLabelLength}).");
-            }
-        }
-
         private static void ValidateDataClassification(string targetName, string? label, string? informationType, string? rank) {
             if (string.IsNullOrWhiteSpace(label)
                 && string.IsNullOrWhiteSpace(informationType)
@@ -395,57 +310,7 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
 
-        /// <summary>
-        /// Core logic for writing data classification metadata.
-        /// Both public overloads delegate to this method to avoid code duplication.
-        /// </summary>
-        /// <remarks>
-        /// This method:
-        /// 1. Checks if any classification data exists (early return if empty)
-        /// 2. Writes extended properties for each classification component
-        /// 3. Writes SQL Server native sensitivity classification
-        /// </remarks>
-        private void WriteDataClassificationCore(
-            MigrationCommandListBuilder builder,
-            string schemaName,
-            string tableName,
-            string columnName,
-            string? label,
-            string? informationType,
-            string? rank) {
 
-            // Early return if no classification data
-            if (string.IsNullOrWhiteSpace(label)
-                && string.IsNullOrWhiteSpace(informationType)
-                && string.IsNullOrWhiteSpace(rank)) {
-                return;
-            }
-
-            // Write extended properties
-            if (!string.IsNullOrWhiteSpace(label)) {
-                AppendExtendedProperty(
-                    builder, schemaName, tableName, columnName,
-                    DataClassificationConstants.Label, label);
-            }
-
-            if (!string.IsNullOrWhiteSpace(informationType)) {
-                AppendExtendedProperty(
-                    builder, schemaName, tableName, columnName,
-                    DataClassificationConstants.InformationType, informationType);
-            }
-
-            if (!string.IsNullOrWhiteSpace(rank)) {
-                AppendExtendedProperty(
-                    builder, schemaName, tableName, columnName,
-                    DataClassificationConstants.Rank, rank);
-            }
-
-            // Write SQL Server sensitivity classification
-            AppendSensitivityClassification(
-                builder, schemaName, tableName, columnName,
-                label, informationType, rank);
-        }
-
-        #endregion
+        
     }
 }

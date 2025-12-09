@@ -12,6 +12,9 @@ public class AppDbContext : DbContext {
     public DbSet<User> Users { get; set; }
     public DbSet<Admin> Admins { get; set; }
     public DbSet<Game> Games { get; set; }
+    public DbSet<Car> Car { get; set; }
+    
+    public DbSet<Home> Homes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);

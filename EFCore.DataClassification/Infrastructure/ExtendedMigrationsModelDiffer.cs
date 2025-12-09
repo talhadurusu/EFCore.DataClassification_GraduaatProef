@@ -15,8 +15,14 @@ using Microsoft.EntityFrameworkCore.Update.Internal;
 
 namespace EFCore.DataClassification.Infrastructure {
     /// <summary>
-    /// Detects changes in DataClassification annotations and generates
-    /// AlterColumnOperation when needed for migration system.
+    /// Detects DataClassification annotations and generates
+    /// CreateDataClassificationOperation / RemoveDataClassificationOperation when needed.
+    ///
+    /// Handles:
+    /// - New tables (Add ITable)
+    /// - New columns (Diff ITable: target-only columns)
+    /// - Column changes (Diff IColumn)
+    /// - Column removal (Diff ITable: source-only columns)
     /// </summary>
     public sealed class DataClassificationMigrationsModelDiffer : MigrationsModelDiffer {
         public DataClassificationMigrationsModelDiffer(
@@ -31,34 +37,92 @@ namespace EFCore.DataClassification.Infrastructure {
                 commandBatchPreparerDependencies) {
         }
 
+        // NEW TABLE
+        protected override IEnumerable<MigrationOperation> Add(ITable target, DiffContext diffContext) {
+            var ops = base.Add(target, diffContext).ToList();
 
-        protected override IEnumerable<MigrationOperation> Diff(IColumn source, IColumn target, DiffContext diffContext) {
+            foreach (var column in target.Columns) {
+                var prop = column.PropertyMappings.FirstOrDefault()?.Property;
+                if (prop is null)
+                    continue;
+
+                if (HasClassification(prop)) {
+                    ops.Add(GenerateCreateOperation(column, prop));
+                }
+            }
+
+            return ops;
+        }
+
+        // TABLE DIFF: detect new/removed columns 
+        protected override IEnumerable<MigrationOperation> Diff(ITable source, ITable target, DiffContext diffContext) {
+            var ops = base.Diff(source, target, diffContext).ToList();
+
+            // Newly added columns: present in target, absent in source
+            foreach (var targetColumn in target.Columns) {
+                var sourceColumn = source.Columns.FirstOrDefault(c => c.Name == targetColumn.Name);
+                if (sourceColumn is not null)
+                    continue; 
+
+                var prop = targetColumn.PropertyMappings.FirstOrDefault()?.Property;
+                if (prop is not null && HasClassification(prop)) {
+                    ops.Add(GenerateCreateOperation(targetColumn, prop));
+                }
+            }
+
+            // Deleted columns: present in source, absent in target
+            foreach (var sourceColumn in source.Columns) {
+                var targetColumn = target.Columns.FirstOrDefault(c => c.Name == sourceColumn.Name);
+                if (targetColumn is not null)
+                    continue; 
+
+                var prop = sourceColumn.PropertyMappings.FirstOrDefault()?.Property;
+                if (prop is not null && HasClassification(prop)) {
+                    ops.Insert(0, GenerateRemoveOperation(sourceColumn));
+                }
+            }
+
+            return ops;
+        }
+
+        // EXISTING COLUMN CHANGES
+        protected override IEnumerable<MigrationOperation> Diff(
+            IColumn source, IColumn target, DiffContext diffContext) {
             var baseOps = base.Diff(source, target, diffContext).ToList();
 
-            
+            var sourceProp = source.PropertyMappings.FirstOrDefault()?.Property;
+            var targetProp = target.PropertyMappings.FirstOrDefault()?.Property;
 
-            var sourceProperty = source.PropertyMappings.FirstOrDefault()?.Property;
-            var targetProperty = target.PropertyMappings.FirstOrDefault()?.Property;
-
-            if (sourceProperty is null && targetProperty is null)
+            if (sourceProp is null && targetProp is null)
                 return baseOps;
 
-            if (sourceProperty != null && targetProperty is null) {
+            if (sourceProp != null && targetProp is null) {
                 baseOps.Add(GenerateRemoveOperation(source));
                 return baseOps;
             }
 
-            if (sourceProperty is null && targetProperty != null) {
-                baseOps.Add(GenerateCreateOperation(target, targetProperty));
+            if (sourceProp is null && targetProp != null) {
+                baseOps.Add(GenerateCreateOperation(target, targetProp));
                 return baseOps;
             }
 
-            if (!HasDataClassificationChanged(source, target) || targetProperty is null)
+            if (!HasDataClassificationChanged(source, target) || targetProp is null)
                 return baseOps;
 
             baseOps.Add(GenerateRemoveOperation(target));
-            baseOps.Add(GenerateCreateOperation(target, targetProperty));
+            baseOps.Add(GenerateCreateOperation(target, targetProp));
             return baseOps;
+        }
+
+        // Helpers
+        private static bool HasClassification(IProperty property) {
+            var label = GetAnnotation(property, DataClassificationConstants.Label);
+            var infoType = GetAnnotation(property, DataClassificationConstants.InformationType);
+            var rank = GetAnnotation(property, DataClassificationConstants.Rank);
+
+            return !string.IsNullOrWhiteSpace(label)
+                || !string.IsNullOrWhiteSpace(infoType)
+                || !string.IsNullOrWhiteSpace(rank);
         }
 
         private static CreateDataClassificationOperation GenerateCreateOperation(IColumn column, IProperty property)
@@ -90,8 +154,6 @@ namespace EFCore.DataClassification.Infrastructure {
             return $"{property.DeclaringType.Name}.{property.Name}";
         }
 
-
-
         private static bool HasDataClassificationChanged(IColumn source, IColumn target) {
             var sProp = source.PropertyMappings.FirstOrDefault()?.Property;
             var tProp = target.PropertyMappings.FirstOrDefault()?.Property;
@@ -105,7 +167,6 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
         private static bool HasAnnotationChanged(IProperty source, IProperty target, string annotationKey) {
-
             var sourceValue = source.FindAnnotation(annotationKey)?.Value?.ToString() ?? string.Empty;
             var targetValue = target.FindAnnotation(annotationKey)?.Value?.ToString() ?? string.Empty;
             return sourceValue != targetValue;
