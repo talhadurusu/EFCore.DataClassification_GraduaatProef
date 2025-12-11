@@ -5,6 +5,7 @@ using EFCore.DataClassification.WebApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,9 +13,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251211095636_DCisback")]
+    partial class DCisback
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,40 +54,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Admins");
-                });
-
-            modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.Bike", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Brand")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Bike Brand")
-                        .HasAnnotation("DataClassification:Label", "Public")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
-
-                    b.Property<int>("GearCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Owner")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Bike Owner")
-                        .HasAnnotation("DataClassification:Label", "Confidential")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Bikes");
                 });
 
             modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.Car", b =>

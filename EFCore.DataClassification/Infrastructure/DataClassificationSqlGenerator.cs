@@ -51,9 +51,10 @@ namespace EFCore.DataClassification.Infrastructure {
             base.Generate(operation, model, builder);
         }
 
+      
 
         #region Orchestrator helpers (Write / Clear)
-     
+
         /// <summary>
         /// Writes data classification from explicit string parameters
         /// </summary>

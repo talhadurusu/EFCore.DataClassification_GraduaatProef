@@ -5,9 +5,7 @@ namespace EFCore.DataClassification.WebApi.Models {
     public class Car {
 
         public int Id { get; set; }
-        [DataClassification("Public", "araba yapici", SensitivityRank.High)]
-        public string Maker { get; set; } = string.Empty;
-
+       
         [DataClassification("Public", "Car model", SensitivityRank.None)]
         public string Model { get; set; } = string.Empty;
 

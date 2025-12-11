@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using EFCore.DataClassification.Annotations;
 using EFCore.DataClassification.Operations;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Internal;
@@ -55,14 +53,17 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
         // TABLE DIFF: detect new/removed columns 
-        protected override IEnumerable<MigrationOperation> Diff(ITable source, ITable target, DiffContext diffContext) {
+        protected override IEnumerable<MigrationOperation> Diff(
+            ITable source,
+            ITable target,
+            DiffContext diffContext) {
             var ops = base.Diff(source, target, diffContext).ToList();
 
             // Newly added columns: present in target, absent in source
             foreach (var targetColumn in target.Columns) {
                 var sourceColumn = source.Columns.FirstOrDefault(c => c.Name == targetColumn.Name);
                 if (sourceColumn is not null)
-                    continue; 
+                    continue;
 
                 var prop = targetColumn.PropertyMappings.FirstOrDefault()?.Property;
                 if (prop is not null && HasClassification(prop)) {
@@ -74,12 +75,13 @@ namespace EFCore.DataClassification.Infrastructure {
             foreach (var sourceColumn in source.Columns) {
                 var targetColumn = target.Columns.FirstOrDefault(c => c.Name == sourceColumn.Name);
                 if (targetColumn is not null)
-                    continue; 
+                    continue;
 
                 var prop = sourceColumn.PropertyMappings.FirstOrDefault()?.Property;
-                if (prop is not null && HasClassification(prop)) {
-                    ops.Insert(0, GenerateRemoveOperation(sourceColumn));
-                }
+                if (prop is null || !HasClassification(prop))
+                    continue;
+
+                ops.Add(GenerateRemoveOperation(sourceColumn));
             }
 
             return ops;
@@ -87,7 +89,9 @@ namespace EFCore.DataClassification.Infrastructure {
 
         // EXISTING COLUMN CHANGES
         protected override IEnumerable<MigrationOperation> Diff(
-            IColumn source, IColumn target, DiffContext diffContext) {
+     IColumn source,
+     IColumn target,
+     DiffContext diffContext) {
             var baseOps = base.Diff(source, target, diffContext).ToList();
 
             var sourceProp = source.PropertyMappings.FirstOrDefault()?.Property;
@@ -96,16 +100,19 @@ namespace EFCore.DataClassification.Infrastructure {
             if (sourceProp is null && targetProp is null)
                 return baseOps;
 
+           
             if (sourceProp != null && targetProp is null) {
                 baseOps.Add(GenerateRemoveOperation(source));
                 return baseOps;
             }
 
+            // Column gained a mapped property with classification => create metadata
             if (sourceProp is null && targetProp != null) {
                 baseOps.Add(GenerateCreateOperation(target, targetProp));
                 return baseOps;
             }
 
+            // Both have properties; check if classification changed
             if (!HasDataClassificationChanged(source, target) || targetProp is null)
                 return baseOps;
 
@@ -113,16 +120,40 @@ namespace EFCore.DataClassification.Infrastructure {
             baseOps.Add(GenerateCreateOperation(target, targetProp));
             return baseOps;
         }
+        protected override IReadOnlyList<MigrationOperation> Sort(
+            IEnumerable<MigrationOperation> operations,
+            DiffContext diffContext) {
+            var sorted = base.Sort(operations, diffContext).ToList();
 
-        // Helpers
+            for (var i = 0; i < sorted.Count; i++) {
+                if (sorted[i] is DropColumnOperation drop) {
+                    var removeIdx = sorted.FindIndex(op =>
+                        op is RemoveDataClassificationOperation remove &&
+                        string.Equals(remove.Schema ?? drop.Schema, drop.Schema, StringComparison.OrdinalIgnoreCase) &&
+                        remove.Table == drop.Table &&
+                        remove.Column == drop.Name);
+
+                    if (removeIdx >= 0 && removeIdx > i) {
+                        var remove = sorted[removeIdx];
+                        sorted.RemoveAt(removeIdx);
+                        sorted.Insert(i, remove);
+                    }
+                }
+            }
+
+            return sorted;
+        }
+
+        // Helpers --------------------------------------------------------------
+
         private static bool HasClassification(IProperty property) {
             var label = GetAnnotation(property, DataClassificationConstants.Label);
             var infoType = GetAnnotation(property, DataClassificationConstants.InformationType);
             var rank = GetAnnotation(property, DataClassificationConstants.Rank);
 
             return !string.IsNullOrWhiteSpace(label)
-                || !string.IsNullOrWhiteSpace(infoType)
-                || !string.IsNullOrWhiteSpace(rank);
+                   || !string.IsNullOrWhiteSpace(infoType)
+                   || !string.IsNullOrWhiteSpace(rank);
         }
 
         private static CreateDataClassificationOperation GenerateCreateOperation(IColumn column, IProperty property)
@@ -162,8 +193,8 @@ namespace EFCore.DataClassification.Infrastructure {
                 return false;
 
             return HasAnnotationChanged(sProp, tProp, DataClassificationConstants.Label)
-                || HasAnnotationChanged(sProp, tProp, DataClassificationConstants.InformationType)
-                || HasAnnotationChanged(sProp, tProp, DataClassificationConstants.Rank);
+                   || HasAnnotationChanged(sProp, tProp, DataClassificationConstants.InformationType)
+                   || HasAnnotationChanged(sProp, tProp, DataClassificationConstants.Rank);
         }
 
         private static bool HasAnnotationChanged(IProperty source, IProperty target, string annotationKey) {
@@ -173,3 +204,5 @@ namespace EFCore.DataClassification.Infrastructure {
         }
     }
 }
+
+#pragma warning restore EF1001

@@ -13,7 +13,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace EFCore.DataClassification.Tests.Integration {
-    #pragma warning disable EF1001 // Using EF Core internal APIs for test coverage
+
+    #pragma warning disable EF1001 
     public class DataClassificationIntegrationTests {
         private const string ConnectionString =
             "Server=(localdb)\\mssqllocaldb;Database=Fake;Trusted_Connection=True;TrustServerCertificate=True";
@@ -72,7 +73,57 @@ namespace EFCore.DataClassification.Tests.Integration {
             Assert.Equal("High", createOp.Rank);
         }
 
-        
+        [Fact]
+        public void Removing_classification_on_existing_column_emits_remove_operation() {
+           
+            var (sourceModel, targetModel) =
+                BuildModels<TargetContext_Users_WithClassifiedEmail, SourceContext_Users_NoEmail>();
+
+            var differ = CreateDiffer();
+
+            // Act
+            var operations = differ.GetDifferences(sourceModel, targetModel).ToList();
+
+            // Assert: RemoveDataClassificationOperation var mı ve doğru mu?
+            var removeOp = Assert.Single(
+                operations.OfType<RemoveDataClassificationOperation>());
+
+            Assert.Equal("dbo", removeOp.Schema);
+            Assert.Equal("Users", removeOp.Table);
+            Assert.Equal("Email", removeOp.Column);
+        }
+
+        [Fact]
+        public void Removing_classified_column_emits_remove_and_drop_operations() {
+            // Arrange
+            var (sourceModel, targetModel) =
+                BuildModels<TargetContext_Users_WithClassifiedEmail, SourceContext_Users_NoEmail>();
+
+            var differ = CreateDiffer();
+
+            // Act
+            var operations = differ.GetDifferences(sourceModel, targetModel).ToList();
+
+            // Assert
+            var removeOp = operations.OfType<RemoveDataClassificationOperation>().Single();
+            var dropOp = operations.OfType<DropColumnOperation>().Single();
+
+            Assert.Equal("dbo", removeOp.Schema);
+            Assert.Equal("Users", removeOp.Table);
+            Assert.Equal("Email", removeOp.Column);
+
+            Assert.Equal("Users", dropOp.Table);
+            Assert.Equal("Email", dropOp.Name);
+
+            // RemoveDataClassificationOperation must come first 
+            var removeIndex = operations.IndexOf(removeOp);
+            var dropIndex = operations.IndexOf(dropOp);
+
+            
+            Assert.True(removeIndex >= 0 && dropIndex >= 0, "Remove and Drop operations must exist in the operations list.");
+            Assert.True(removeIndex < dropIndex, $"RemoveDataClassificationOperation should come before DropColumnOperation. Actual order: remove={removeIndex}, drop={dropIndex}");
+        }
+
         // Changing classification on existing column
         [Fact]
         public void Changing_classification_on_existing_column_emits_remove_then_create() {
@@ -131,7 +182,7 @@ namespace EFCore.DataClassification.Tests.Integration {
         // Helper: DataClassificationMigrationsModelDiffer instance
 
         private static DataClassificationMigrationsModelDiffer CreateDiffer() {
-            // Normal bir DbContext üzerinden EF Core servislerini alıyoruz
+          
             var options = new DbContextOptionsBuilder()
                 .UseSqlServer(ConnectionString)
                 .Options;
@@ -181,7 +232,7 @@ namespace EFCore.DataClassification.Tests.Integration {
             }
         }
 
-   // 2) Source: There is a Users table but no Email column
+        // 2) Source: There is a Users table but no Email column
         private sealed class SourceContext_Users_NoEmail : BaseContext {
             public DbSet<UserEntity_NoEmail> Users => Set<UserEntity_NoEmail>();
 
@@ -244,7 +295,7 @@ namespace EFCore.DataClassification.Tests.Integration {
             }
         }
 
-        // Basit entity tipleri
+        // Simple entity types
         private sealed class UserEntity {
             public int Id { get; set; }
             public string Email { get; set; } = string.Empty;
@@ -254,5 +305,5 @@ namespace EFCore.DataClassification.Tests.Integration {
             public int Id { get; set; }
         }
     }
-    #pragma warning restore EF1001
+    
 }
