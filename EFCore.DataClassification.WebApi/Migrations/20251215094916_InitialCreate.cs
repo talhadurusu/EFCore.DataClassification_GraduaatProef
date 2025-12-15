@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     /// <inheritdoc />
-    public partial class firstcreate : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -26,6 +26,53 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Admins", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Bikes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Brand = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Owner = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    GearCount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bikes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Car",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Year = table.Column<int>(type: "int", nullable: false),
+                    VIN = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UniqueId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Car", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Homes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Size = table.Column<int>(type: "int", nullable: false),
+                    OwnerName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Homes", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -113,6 +160,66 @@ namespace EFCore.DataClassification.WebApi.Migrations
             migrationBuilder.Operations.Add(new CreateDataClassificationOperation
             {
                 Schema = null,
+                Table = "Bikes",
+                Column = "Brand",
+                Label = "Public",
+                InformationType = "Bike Brand",
+                Rank = "Low",
+                PropertyDisplayName = "Bike.Brand"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Bikes",
+                Column = "Owner",
+                Label = "Confidential",
+                InformationType = "Bike Owner",
+                Rank = "High",
+                PropertyDisplayName = "Bike.Owner"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Car",
+                Column = "Model",
+                Label = "Public",
+                InformationType = "Car model",
+                Rank = "None",
+                PropertyDisplayName = "Car.Model"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Car",
+                Column = "UniqueId",
+                Label = "Confidential",
+                InformationType = "Unique Car Identifier",
+                Rank = "High",
+                PropertyDisplayName = "Car.UniqueId"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Car",
+                Column = "VIN",
+                Label = "Confidential",
+                InformationType = "Vehicle Identification Number",
+                Rank = "Critical",
+                PropertyDisplayName = "Car.VIN"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
                 Table = "Games",
                 Column = "Description",
                 Label = "Confidential",
@@ -126,11 +233,71 @@ namespace EFCore.DataClassification.WebApi.Migrations
             {
                 Schema = null,
                 Table = "Games",
+                Column = "Genre",
+                Label = "Public",
+                InformationType = "Game Genre",
+                Rank = "Low",
+                PropertyDisplayName = "Game.Genre"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
                 Column = "PublisherUnikeUnitID",
                 Label = "Very Confidential",
                 InformationType = "Publisher Unique Unit ID",
                 Rank = "Medium",
                 PropertyDisplayName = "Game.PublisherUnikeUnitID"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "ReleaseDate",
+                Label = "Public",
+                InformationType = "Release Date",
+                Rank = "None",
+                PropertyDisplayName = "Game.ReleaseDate"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Homes",
+                Column = "Address",
+                Label = "Private",
+                InformationType = "Home Address",
+                Rank = "Medium",
+                PropertyDisplayName = "Home.Address"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Homes",
+                Column = "OwnerName",
+                Label = "Confidential",
+                InformationType = "Owner Name",
+                Rank = "High",
+                PropertyDisplayName = "Home.OwnerName"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Homes",
+                Column = "Size",
+                Label = "Public",
+                InformationType = "Home Size",
+                Rank = "Low",
+                PropertyDisplayName = "Home.Size"
             })
             ;
 
@@ -187,7 +354,16 @@ namespace EFCore.DataClassification.WebApi.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "Bikes");
+
+            migrationBuilder.DropTable(
+                name: "Car");
+
+            migrationBuilder.DropTable(
                 name: "Games");
+
+            migrationBuilder.DropTable(
+                name: "Homes");
 
             migrationBuilder.DropTable(
                 name: "Users");

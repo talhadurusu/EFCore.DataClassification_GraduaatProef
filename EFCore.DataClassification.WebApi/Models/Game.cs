@@ -10,14 +10,15 @@ namespace EFCore.DataClassification.WebApi.Models {
         [DataClassification("Very Confidential", "Publisher Unique Unit ID", SensitivityRank.Medium)]
         public string PublisherUnikeUnitID { get; set; } = string.Empty;
 
-    
+        
         public string Title { get; set; } = string.Empty;
 
         public string Genre { get; set; } = string.Empty;
-        
+
+        [DataClassification("Intern", "Release Date", SensitivityRank.None)]
         public DateTime ReleaseDate { get; set; }
 
-        [DataClassification("Confidential", "Game Story", SensitivityRank.Low)]
+        
         public string Description { get; set; } = string.Empty;
 
         [Column(TypeName = "decimal(18,2)")]

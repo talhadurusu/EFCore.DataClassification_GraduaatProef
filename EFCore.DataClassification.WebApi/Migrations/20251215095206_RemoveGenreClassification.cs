@@ -7,20 +7,16 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     /// <inheritdoc />
-    public partial class carmodeldeleted : Migration
+    public partial class RemoveGenreClassification : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Model",
-                table: "Car");
-
             migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
             {
                 Schema = null,
-                Table = "Car",
-                Column = "Model"
+                Table = "Games",
+                Column = "Genre"
             })
             ;
         }
@@ -28,22 +24,15 @@ namespace EFCore.DataClassification.WebApi.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "Model",
-                table: "Car",
-                type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "");
-
             migrationBuilder.Operations.Add(new CreateDataClassificationOperation
             {
                 Schema = null,
-                Table = "Car",
-                Column = "Model",
+                Table = "Games",
+                Column = "Genre",
                 Label = "Public",
-                InformationType = "Car model",
-                Rank = "None",
-                PropertyDisplayName = "EFCore.DataClassification.WebApi.Models.Car (Dictionary<string, object>).Model"
+                InformationType = "Game Genre",
+                Rank = "Low",
+                PropertyDisplayName = "EFCore.DataClassification.WebApi.Models.Game (Dictionary<string, object>).Genre"
             })
             ;
         }

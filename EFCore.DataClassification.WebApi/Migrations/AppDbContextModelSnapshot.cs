@@ -133,10 +133,7 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Game Story")
-                        .HasAnnotation("DataClassification:Label", "Confidential")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Genre")
                         .IsRequired()
@@ -153,7 +150,10 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
 
                     b.Property<DateTime>("ReleaseDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("DataClassification:InformationType", "Release Date")
+                        .HasAnnotation("DataClassification:Label", "Intern")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.None);
 
                     b.Property<string>("Title")
                         .IsRequired()

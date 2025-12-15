@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using EFCore.DataClassification.Annotations;
 using EFCore.DataClassification.Operations;
@@ -13,16 +14,12 @@ using Microsoft.EntityFrameworkCore.Update.Internal;
 
 namespace EFCore.DataClassification.Infrastructure {
     /// <summary>
-    /// Detects DataClassification annotations and generates
-    /// CreateDataClassificationOperation / RemoveDataClassificationOperation when needed.
-    ///
-    /// Handles:
-    /// - New tables (Add ITable)
-    /// - New columns (Diff ITable: target-only columns)
-    /// - Column changes (Diff IColumn)
-    /// - Column removal (Diff ITable: source-only columns)
+    /// Adds/removes SQL Server Data Classification metadata during migrations,
+    /// based on model annotations found on mapped properties.
     /// </summary>
     public sealed class DataClassificationMigrationsModelDiffer : MigrationsModelDiffer {
+        #region Constructor
+
         public DataClassificationMigrationsModelDiffer(
             IRelationalTypeMappingSource typeMappingSource,
             IMigrationsAnnotationProvider migrationsAnnotationProvider,
@@ -35,116 +32,128 @@ namespace EFCore.DataClassification.Infrastructure {
                 commandBatchPreparerDependencies) {
         }
 
-        // NEW TABLE
+        #endregion
+
+        #region Overrides
+
         protected override IEnumerable<MigrationOperation> Add(ITable target, DiffContext diffContext) {
             var ops = base.Add(target, diffContext).ToList();
 
             foreach (var column in target.Columns) {
-                var prop = column.PropertyMappings.FirstOrDefault()?.Property;
+                var prop = GetMappedProperty(column);
                 if (prop is null)
                     continue;
 
-                if (HasClassification(prop)) {
+                if (HasClassification(prop))
                     ops.Add(GenerateCreateOperation(column, prop));
-                }
             }
 
             return ops;
         }
 
-        // TABLE DIFF: detect new/removed columns 
-        protected override IEnumerable<MigrationOperation> Diff(
-            ITable source,
-            ITable target,
-            DiffContext diffContext) {
+        protected override IEnumerable<MigrationOperation> Diff(ITable source, ITable target, DiffContext diffContext) {
             var ops = base.Diff(source, target, diffContext).ToList();
 
-            // Newly added columns: present in target, absent in source
-            foreach (var targetColumn in target.Columns) {
-                var sourceColumn = source.Columns.FirstOrDefault(c => c.Name == targetColumn.Name);
-                if (sourceColumn is not null)
+            var sourceByName = source.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
+            var targetByName = target.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
+
+            // Added columns
+            foreach (var (name, targetColumn) in targetByName) {
+                if (sourceByName.ContainsKey(name))
                     continue;
 
-                var prop = targetColumn.PropertyMappings.FirstOrDefault()?.Property;
-                if (prop is not null && HasClassification(prop)) {
+                var prop = GetMappedProperty(targetColumn);
+                if (prop is not null && HasClassification(prop))
                     ops.Add(GenerateCreateOperation(targetColumn, prop));
-                }
             }
 
-            // Deleted columns: present in source, absent in target
-            foreach (var sourceColumn in source.Columns) {
-                var targetColumn = target.Columns.FirstOrDefault(c => c.Name == sourceColumn.Name);
-                if (targetColumn is not null)
+            // Removed columns
+            foreach (var (name, sourceColumn) in sourceByName) {
+                if (targetByName.ContainsKey(name))
                     continue;
 
-                var prop = sourceColumn.PropertyMappings.FirstOrDefault()?.Property;
-                if (prop is null || !HasClassification(prop))
-                    continue;
-
-                ops.Add(GenerateRemoveOperation(sourceColumn));
+                var prop = GetMappedProperty(sourceColumn);
+                if (prop is not null && HasClassification(prop))
+                    ops.Add(GenerateRemoveOperation(sourceColumn));
             }
 
             return ops;
         }
 
-        // EXISTING COLUMN CHANGES
-        protected override IEnumerable<MigrationOperation> Diff(
-     IColumn source,
-     IColumn target,
-     DiffContext diffContext) {
-            var baseOps = base.Diff(source, target, diffContext).ToList();
+        protected override IEnumerable<MigrationOperation> Diff(IColumn source, IColumn target, DiffContext diffContext) {
+            var ops = base.Diff(source, target, diffContext).ToList();
 
-            var sourceProp = source.PropertyMappings.FirstOrDefault()?.Property;
-            var targetProp = target.PropertyMappings.FirstOrDefault()?.Property;
+            var sProp = GetMappedProperty(source);
+            var tProp = GetMappedProperty(target);
 
-            if (sourceProp is null && targetProp is null)
-                return baseOps;
+            if (sProp is null && tProp is null)
+                return ops;
 
-           
-            if (sourceProp != null && targetProp is null) {
-                baseOps.Add(GenerateRemoveOperation(source));
-                return baseOps;
+            var sHas = sProp is not null && HasClassification(sProp);
+            var tHas = tProp is not null && HasClassification(tProp);
+
+            // Mapping removed
+            if (sProp is not null && tProp is null) {
+                if (sHas)
+                    ops.Add(GenerateRemoveOperation(source));
+                return ops;
             }
 
-            // Column gained a mapped property with classification => create metadata
-            if (sourceProp is null && targetProp != null) {
-                baseOps.Add(GenerateCreateOperation(target, targetProp));
-                return baseOps;
+            // Mapping added
+            if (sProp is null && tProp is not null) {
+                if (tHas)
+                    ops.Add(GenerateCreateOperation(target, tProp));
+                return ops;
             }
 
-            // Both have properties; check if classification changed
-            if (!HasDataClassificationChanged(source, target) || targetProp is null)
-                return baseOps;
+            // Both mapped
+            if (sHas && !tHas) {
+                ops.Add(GenerateRemoveOperation(target));
+                return ops;
+            }
 
-            baseOps.Add(GenerateRemoveOperation(target));
-            baseOps.Add(GenerateCreateOperation(target, targetProp));
-            return baseOps;
+            if (!sHas && tHas) {
+                ops.Add(GenerateCreateOperation(target, tProp!));
+                return ops;
+            }
+
+            if (sHas && tHas && HasDataClassificationChanged(sProp!, tProp!)) {
+                ops.Add(GenerateRemoveOperation(target));
+                ops.Add(GenerateCreateOperation(target, tProp!));
+            }
+
+            return ops;
         }
-        protected override IReadOnlyList<MigrationOperation> Sort(
-            IEnumerable<MigrationOperation> operations,
-            DiffContext diffContext) {
+
+        protected override IReadOnlyList<MigrationOperation> Sort(IEnumerable<MigrationOperation> operations, DiffContext diffContext) {
             var sorted = base.Sort(operations, diffContext).ToList();
 
             for (var i = 0; i < sorted.Count; i++) {
-                if (sorted[i] is DropColumnOperation drop) {
-                    var removeIdx = sorted.FindIndex(op =>
-                        op is RemoveDataClassificationOperation remove &&
-                        string.Equals(remove.Schema ?? drop.Schema, drop.Schema, StringComparison.OrdinalIgnoreCase) &&
-                        remove.Table == drop.Table &&
-                        remove.Column == drop.Name);
+                if (sorted[i] is not DropColumnOperation drop)
+                    continue;
 
-                    if (removeIdx >= 0 && removeIdx > i) {
-                        var remove = sorted[removeIdx];
-                        sorted.RemoveAt(removeIdx);
-                        sorted.Insert(i, remove);
-                    }
+                var removeIdx = sorted.FindIndex(op =>
+                    op is RemoveDataClassificationOperation remove
+                    && string.Equals(remove.Schema ?? drop.Schema, drop.Schema, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(remove.Table, drop.Table, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(remove.Column, drop.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (removeIdx >= 0 && removeIdx > i) {
+                    var remove = sorted[removeIdx];
+                    sorted.RemoveAt(removeIdx);
+                    sorted.Insert(i, remove);
                 }
             }
 
             return sorted;
         }
 
-        // Helpers --------------------------------------------------------------
+        #endregion
+
+        #region Helpers
+
+        private static IProperty? GetMappedProperty(IColumn column)
+            => column.PropertyMappings.FirstOrDefault()?.Property;
 
         private static bool HasClassification(IProperty property) {
             var label = GetAnnotation(property, DataClassificationConstants.Label);
@@ -178,30 +187,24 @@ namespace EFCore.DataClassification.Infrastructure {
             => property.FindAnnotation(key)?.Value?.ToString();
 
         private static string GetPropertyDisplayName(IProperty property) {
-            if (property.DeclaringType is IEntityType entityType) {
+            if (property.DeclaringType is IEntityType entityType)
                 return $"{entityType.DisplayName()}.{property.Name}";
-            }
 
             return $"{property.DeclaringType.Name}.{property.Name}";
         }
 
-        private static bool HasDataClassificationChanged(IColumn source, IColumn target) {
-            var sProp = source.PropertyMappings.FirstOrDefault()?.Property;
-            var tProp = target.PropertyMappings.FirstOrDefault()?.Property;
-
-            if (sProp is null || tProp is null)
-                return false;
-
-            return HasAnnotationChanged(sProp, tProp, DataClassificationConstants.Label)
-                   || HasAnnotationChanged(sProp, tProp, DataClassificationConstants.InformationType)
-                   || HasAnnotationChanged(sProp, tProp, DataClassificationConstants.Rank);
-        }
+        private static bool HasDataClassificationChanged(IProperty sourceProp, IProperty targetProp)
+            => HasAnnotationChanged(sourceProp, targetProp, DataClassificationConstants.Label)
+               || HasAnnotationChanged(sourceProp, targetProp, DataClassificationConstants.InformationType)
+               || HasAnnotationChanged(sourceProp, targetProp, DataClassificationConstants.Rank);
 
         private static bool HasAnnotationChanged(IProperty source, IProperty target, string annotationKey) {
             var sourceValue = source.FindAnnotation(annotationKey)?.Value?.ToString() ?? string.Empty;
             var targetValue = target.FindAnnotation(annotationKey)?.Value?.ToString() ?? string.Empty;
-            return sourceValue != targetValue;
+            return !string.Equals(sourceValue, targetValue, StringComparison.Ordinal);
         }
+
+        #endregion
     }
 }
 

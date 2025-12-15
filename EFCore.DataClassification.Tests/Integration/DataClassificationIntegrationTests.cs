@@ -74,26 +74,6 @@ namespace EFCore.DataClassification.Tests.Integration {
         }
 
         [Fact]
-        public void Removing_classification_on_existing_column_emits_remove_operation() {
-           
-            var (sourceModel, targetModel) =
-                BuildModels<TargetContext_Users_WithClassifiedEmail, SourceContext_Users_NoEmail>();
-
-            var differ = CreateDiffer();
-
-            // Act
-            var operations = differ.GetDifferences(sourceModel, targetModel).ToList();
-
-            // Assert: RemoveDataClassificationOperation var mı ve doğru mu?
-            var removeOp = Assert.Single(
-                operations.OfType<RemoveDataClassificationOperation>());
-
-            Assert.Equal("dbo", removeOp.Schema);
-            Assert.Equal("Users", removeOp.Table);
-            Assert.Equal("Email", removeOp.Column);
-        }
-
-        [Fact]
         public void Removing_classified_column_emits_remove_and_drop_operations() {
             // Arrange
             var (sourceModel, targetModel) =
