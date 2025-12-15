@@ -23,8 +23,7 @@ public class MigrationBuilderExtensionsTests
             schema: "dbo",
             label: "Confidential",
             informationType: "Email Address",
-            rank: "High",
-            propertyDisplayName: "User.Email"
+            rank: "High"
         );
 
         // Assert
@@ -35,7 +34,6 @@ public class MigrationBuilderExtensionsTests
         Assert.Equal("Confidential", operation.Label);
         Assert.Equal("Email Address", operation.InformationType);
         Assert.Equal("High", operation.Rank);
-        Assert.Equal("User.Email", operation.PropertyDisplayName);
     }
 
     [Fact]
@@ -163,8 +161,7 @@ public class MigrationBuilderExtensionsTests
             schema: null,
             label: null,
             informationType: null,
-            rank: null,
-            propertyDisplayName: null
+            rank: null
         );
 
         // Assert
@@ -173,7 +170,6 @@ public class MigrationBuilderExtensionsTests
         Assert.Null(operation.Label);
         Assert.Null(operation.InformationType);
         Assert.Null(operation.Rank);
-        Assert.Null(operation.PropertyDisplayName);
     }
 }
 

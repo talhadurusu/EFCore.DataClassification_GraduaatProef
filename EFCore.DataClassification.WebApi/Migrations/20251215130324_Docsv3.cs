@@ -7,16 +7,19 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     /// <inheritdoc />
-    public partial class RemoveGenreClassification : Migration
+    public partial class Docsv3 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
             {
                 Schema = null,
-                Table = "Games",
-                Column = "Genre"
+                Table = "Documents",
+                Column = "Summary",
+                Label = "Docs",
+                InformationType = "Summary",
+                Rank = "Low",
             })
             ;
         }
@@ -24,15 +27,11 @@ namespace EFCore.DataClassification.WebApi.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            migrationBuilder.Operations.Add(new RemoveDataClassificationOperation
             {
                 Schema = null,
-                Table = "Games",
-                Column = "Genre",
-                Label = "Public",
-                InformationType = "Game Genre",
-                Rank = "Low",
-                PropertyDisplayName = "EFCore.DataClassification.WebApi.Models.Game (Dictionary<string, object>).Genre"
+                Table = "Documents",
+                Column = "Summary"
             })
             ;
         }

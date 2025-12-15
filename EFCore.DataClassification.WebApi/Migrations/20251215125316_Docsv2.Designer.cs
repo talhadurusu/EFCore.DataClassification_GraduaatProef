@@ -13,8 +13,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251215114402_Dcdeletedandchanged")]
-    partial class Dcdeletedandchanged
+    [Migration("20251215125316_Docsv2")]
+    partial class Docsv2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -102,28 +102,102 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("DataClassification:InformationType", "Car model")
-                        .HasAnnotation("DataClassification:Label", "Public")
+                        .HasAnnotation("DataClassification:Label", "Intern")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.None);
 
                     b.Property<int>("UniqueId")
                         .HasColumnType("int")
                         .HasAnnotation("DataClassification:InformationType", "Unique Car Identifier")
                         .HasAnnotation("DataClassification:Label", "Confidential")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
 
                     b.Property<string>("VIN")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Vehicle Identification Number")
-                        .HasAnnotation("DataClassification:Label", "Confidential")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Year")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasAnnotation("DataClassification:InformationType", "car relase year")
+                        .HasAnnotation("DataClassification:Label", "Intern")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.None);
 
                     b.HasKey("Id");
 
                     b.ToTable("Car");
+                });
+
+            modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.Customer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Mailing Address")
+                        .HasAnnotation("DataClassification:Label", "Address")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.None);
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Email Address")
+                        .HasAnnotation("DataClassification:Label", "Contact")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.Document", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Author")
+                        .HasAnnotation("DataClassification:Label", "Docs")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Body")
+                        .HasAnnotation("DataClassification:Label", "Docs")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
+
+                    b.Property<string>("InternalRef")
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "InternalRef")
+                        .HasAnnotation("DataClassification:Label", "Docs")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Title")
+                        .HasAnnotation("DataClassification:Label", "Docs")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.None);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("EFCore.DataClassification.WebApi.Models.Game", b =>

@@ -35,7 +35,6 @@ namespace EFCore.DataClassification.Generators {
                 .AppendLine($"Label = {Dependencies.CSharpHelper.Literal(op.Label)},")
                 .AppendLine($"InformationType = {Dependencies.CSharpHelper.Literal(op.InformationType)},")
                 .AppendLine($"Rank = {Dependencies.CSharpHelper.Literal(op.Rank)},")
-                .AppendLine($"PropertyDisplayName = {Dependencies.CSharpHelper.Literal(op.PropertyDisplayName)}")
                 .DecrementIndent()
                 .AppendLine("})");
         }

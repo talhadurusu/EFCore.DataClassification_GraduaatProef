@@ -6,15 +6,16 @@ namespace EFCore.DataClassification.WebApi.Models {
 
         public int Id { get; set; }
        
-        [DataClassification("Public", "Car model", SensitivityRank.None)]
+        [DataClassification("Intern", "Car model", SensitivityRank.None)]
         public string Model { get; set; } = string.Empty;
 
+        [DataClassification("Intern", "car relase year", SensitivityRank.None)]
         public int Year { get; set; }
 
-        [DataClassification("Confidential", "Vehicle Identification Number", SensitivityRank.Critical)]
+       
         public string VIN { get; set; } = string.Empty;
 
-        [DataClassification("Confidential", "Unique Car Identifier", SensitivityRank.High)]
+        [DataClassification("Confidential", "Unique Car Identifier", SensitivityRank.Medium)]
         public int UniqueId { get; set; }
     }
 }

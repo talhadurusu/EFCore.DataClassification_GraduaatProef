@@ -12,8 +12,7 @@ namespace EFCore.DataClassification.Extensions {
             string? schema = null,
             string? label = null,
             string? informationType = null,
-            string? rank = null,
-            string? propertyDisplayName = null) {
+            string? rank = null) {
 
             var operation = new CreateDataClassificationOperation {
                 Table = table,
@@ -22,7 +21,6 @@ namespace EFCore.DataClassification.Extensions {
                 Label = label,
                 InformationType = informationType,
                 Rank = rank,
-                PropertyDisplayName = propertyDisplayName
             };
 
             migrationBuilder.Operations.Add(operation);

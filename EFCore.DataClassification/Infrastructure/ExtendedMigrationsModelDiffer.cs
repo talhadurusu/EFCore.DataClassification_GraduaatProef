@@ -172,8 +172,7 @@ namespace EFCore.DataClassification.Infrastructure {
                 Column = column.Name,
                 Label = GetAnnotation(property, DataClassificationConstants.Label),
                 InformationType = GetAnnotation(property, DataClassificationConstants.InformationType),
-                Rank = GetAnnotation(property, DataClassificationConstants.Rank),
-                PropertyDisplayName = GetPropertyDisplayName(property)
+                Rank = GetAnnotation(property, DataClassificationConstants.Rank)
             };
 
         private static RemoveDataClassificationOperation GenerateRemoveOperation(IColumn column)
@@ -186,12 +185,6 @@ namespace EFCore.DataClassification.Infrastructure {
         private static string? GetAnnotation(IProperty property, string key)
             => property.FindAnnotation(key)?.Value?.ToString();
 
-        private static string GetPropertyDisplayName(IProperty property) {
-            if (property.DeclaringType is IEntityType entityType)
-                return $"{entityType.DisplayName()}.{property.Name}";
-
-            return $"{property.DeclaringType.Name}.{property.Name}";
-        }
 
         private static bool HasDataClassificationChanged(IProperty sourceProp, IProperty targetProp)
             => HasAnnotationChanged(sourceProp, targetProp, DataClassificationConstants.Label)

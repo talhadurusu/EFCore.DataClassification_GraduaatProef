@@ -8,6 +8,6 @@ namespace EFCore.DataClassification.Operations {
         public string? Label { get; set; }
         public string? InformationType { get; set; }
         public string? Rank { get; set; }
-        public string? PropertyDisplayName { get; set; }
+     
     }
 }

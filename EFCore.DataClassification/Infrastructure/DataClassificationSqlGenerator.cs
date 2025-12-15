@@ -1,4 +1,4 @@
-using EFCore.DataClassification.Annotations;
+﻿using EFCore.DataClassification.Annotations;
 using EFCore.DataClassification.Exceptions;
 using EFCore.DataClassification.Operations;
 using Microsoft.EntityFrameworkCore;
@@ -35,8 +35,7 @@ namespace EFCore.DataClassification.Infrastructure {
                         create.Column,
                         create.Label,
                         create.InformationType,
-                        create.Rank,
-                        create.PropertyDisplayName);
+                        create.Rank);
                     return;
 
             case RemoveDataClassificationOperation remove:
@@ -68,11 +67,10 @@ namespace EFCore.DataClassification.Infrastructure {
            string column,
            string? label,
            string? informationType,
-           string? rank,
-           string? propertyDisplayName) {
+           string? rank) {
 
             var schemaName = schema ?? DataClassificationConstants.DefaultSchema;
-            var targetName = propertyDisplayName ?? $"{schemaName}.{table}.{column}";
+            var targetName = $"{schemaName}.{table}.{column}";
 
             // Validate before processing
             ValidateDataClassification(targetName, label, informationType, rank);
@@ -81,21 +79,16 @@ namespace EFCore.DataClassification.Infrastructure {
             WriteDataClassificationCore(builder, schemaName, table, column, label, informationType, rank);
         }
 
-        private void ClearDataClassification(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName) {
-            // Extended properties
-            AppendDropExtendedProperty(
-                builder, schemaName, tableName, columnName, DataClassificationConstants.Label);
+        private void ClearDataClassification(MigrationCommandListBuilder builder, string schemaName, string tableName, string columnName) {
+            AppendDropExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.Label);
+            AppendDropExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.InformationType);
+            AppendDropExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.Rank);
 
-            AppendDropExtendedProperty(
-                builder, schemaName, tableName, columnName, DataClassificationConstants.InformationType);
+            AppendDropSensitivityClassification(builder, schemaName, tableName, columnName);
 
-            AppendDropExtendedProperty(
-                builder, schemaName, tableName, columnName, DataClassificationConstants.Rank);
-
-            // Sensitivity classification
-            AppendDropSensitivityClassification(
-                builder, schemaName, tableName, columnName);
+            builder.EndCommand(); 
         }
+
 
         #endregion
 
@@ -111,45 +104,35 @@ namespace EFCore.DataClassification.Infrastructure {
         /// </remarks>
         /// 
         private void WriteDataClassificationCore(
-            MigrationCommandListBuilder builder,
-            string schemaName,
-            string tableName,
-            string columnName,
-            string? label,
-            string? informationType,
-            string? rank) {
+     MigrationCommandListBuilder builder,
+     string schemaName,
+     string tableName,
+     string columnName,
+     string? label,
+     string? informationType,
+     string? rank) {
+            if (string.Equals(rank, "None", StringComparison.OrdinalIgnoreCase))
+                rank = null;
 
-            // Early return if no classification data
             if (string.IsNullOrWhiteSpace(label)
                 && string.IsNullOrWhiteSpace(informationType)
-                && string.IsNullOrWhiteSpace(rank)) {
+                && string.IsNullOrWhiteSpace(rank))
                 return;
-            }
 
-            // Write extended properties
-            if (!string.IsNullOrWhiteSpace(label)) {
-                AppendExtendedProperty(
-                    builder, schemaName, tableName, columnName,
-                    DataClassificationConstants.Label, label);
-            }
+            if (!string.IsNullOrWhiteSpace(label))
+                AppendExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.Label, label);
 
-            if (!string.IsNullOrWhiteSpace(informationType)) {
-                AppendExtendedProperty(
-                    builder, schemaName, tableName, columnName,
-                    DataClassificationConstants.InformationType, informationType);
-            }
+            if (!string.IsNullOrWhiteSpace(informationType))
+                AppendExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.InformationType, informationType);
 
-            if (!string.IsNullOrWhiteSpace(rank)) {
-                AppendExtendedProperty(
-                    builder, schemaName, tableName, columnName,
-                    DataClassificationConstants.Rank, rank);
-            }
+            if (!string.IsNullOrWhiteSpace(rank))
+                AppendExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.Rank, rank);
 
-            // Write SQL Server sensitivity classification
-            AppendSensitivityClassification(
-                builder, schemaName, tableName, columnName,
-                label, informationType, rank);
+            AppendSensitivityClassification(builder, schemaName, tableName, columnName, label, informationType, rank);
+
+            builder.EndCommand(); 
         }
+
         #endregion
 
         #region Extended property helpers
@@ -172,8 +155,7 @@ namespace EFCore.DataClassification.Infrastructure {
                  @level0type = N'SCHEMA', @level0name = {schemaLiteral},
                  @level1type = N'TABLE',  @level1name = {tableLiteral},
                  @level2type = N'COLUMN', @level2name = {columnLiteral};
-             """)
-                .EndCommand();
+             """);
         }
 
 
@@ -204,8 +186,7 @@ namespace EFCore.DataClassification.Infrastructure {
                      @level0type = N'SCHEMA', @level0name = {schemaLiteral},
                      @level1type = N'TABLE',  @level1name = {tableLiteral},
                      @level2type = N'COLUMN', @level2name = {columnLiteral};
-             """)
-                .EndCommand();
+             """);
         }
 
 
@@ -233,8 +214,8 @@ namespace EFCore.DataClassification.Infrastructure {
                AND sc.minor_id = COLUMNPROPERTY(OBJECT_ID({objectIdLiteral}), {columnLiteral}, 'ColumnId')
          )
              DROP SENSITIVITY CLASSIFICATION FROM {delimitedTable}.{delimitedColumn};
-         """)
-                .EndCommand();
+         """);
+                
         }
 
 
@@ -247,13 +228,12 @@ namespace EFCore.DataClassification.Infrastructure {
 
             string? sqlRank = null;
             if (!string.IsNullOrWhiteSpace(rankString)) {
-                sqlRank = rankString switch {
-                    "None" => null,  
+                sqlRank = rankString switch {  
                     "Low" => "LOW",
                     "Medium" => "MEDIUM",
                     "High" => "HIGH",
                     "Critical" => "CRITICAL",
-                    _ => "LOW"
+                    _ => null
                 };
             }
 
@@ -284,8 +264,7 @@ namespace EFCore.DataClassification.Infrastructure {
             }
 
             builder.Append(string.Join(", ", parts));
-            builder.Append(");")
-                   .EndCommand();
+            builder.AppendLine(");");
         }
 
         #endregion

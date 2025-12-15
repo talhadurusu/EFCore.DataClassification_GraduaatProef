@@ -61,6 +61,36 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Customers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Customers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Documents",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Author = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Documents", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Homes",
                 columns: table => new
                 {
@@ -141,7 +171,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Highly Confidential",
                 InformationType = "Admin Sleutel",
                 Rank = "Critical",
-                PropertyDisplayName = "Admin.Adminkey"
             })
             ;
 
@@ -153,7 +182,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Confidential",
                 InformationType = "Admin Naam",
                 Rank = "Medium",
-                PropertyDisplayName = "Admin.Name"
             })
             ;
 
@@ -165,7 +193,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Public",
                 InformationType = "Bike Brand",
                 Rank = "Low",
-                PropertyDisplayName = "Bike.Brand"
             })
             ;
 
@@ -177,7 +204,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Confidential",
                 InformationType = "Bike Owner",
                 Rank = "High",
-                PropertyDisplayName = "Bike.Owner"
             })
             ;
 
@@ -186,10 +212,9 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Schema = null,
                 Table = "Car",
                 Column = "Model",
-                Label = "Public",
+                Label = "Intern",
                 InformationType = "Car model",
                 Rank = "None",
-                PropertyDisplayName = "Car.Model"
             })
             ;
 
@@ -200,8 +225,7 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Column = "UniqueId",
                 Label = "Confidential",
                 InformationType = "Unique Car Identifier",
-                Rank = "High",
-                PropertyDisplayName = "Car.UniqueId"
+                Rank = "Medium",
             })
             ;
 
@@ -209,35 +233,54 @@ namespace EFCore.DataClassification.WebApi.Migrations
             {
                 Schema = null,
                 Table = "Car",
-                Column = "VIN",
-                Label = "Confidential",
-                InformationType = "Vehicle Identification Number",
-                Rank = "Critical",
-                PropertyDisplayName = "Car.VIN"
+                Column = "Year",
+                Label = "Intern",
+                InformationType = "car relase year",
+                Rank = "None",
             })
             ;
 
             migrationBuilder.Operations.Add(new CreateDataClassificationOperation
             {
                 Schema = null,
-                Table = "Games",
-                Column = "Description",
-                Label = "Confidential",
-                InformationType = "Game Story",
-                Rank = "Low",
-                PropertyDisplayName = "Game.Description"
+                Table = "Customers",
+                Column = "Address",
+                Label = "Address",
+                InformationType = "Mailing Address",
+                Rank = "None",
             })
             ;
 
             migrationBuilder.Operations.Add(new CreateDataClassificationOperation
             {
                 Schema = null,
-                Table = "Games",
-                Column = "Genre",
-                Label = "Public",
-                InformationType = "Game Genre",
+                Table = "Customers",
+                Column = "Email",
+                Label = "Contact",
+                InformationType = "Email Address",
+                Rank = "High",
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Documents",
+                Column = "Author",
+                Label = "Docs",
+                InformationType = "Author",
                 Rank = "Low",
-                PropertyDisplayName = "Game.Genre"
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Documents",
+                Column = "Body",
+                Label = "Docs",
+                InformationType = "Body",
+                Rank = "Medium",
             })
             ;
 
@@ -249,7 +292,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Very Confidential",
                 InformationType = "Publisher Unique Unit ID",
                 Rank = "Medium",
-                PropertyDisplayName = "Game.PublisherUnikeUnitID"
             })
             ;
 
@@ -258,10 +300,9 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Schema = null,
                 Table = "Games",
                 Column = "ReleaseDate",
-                Label = "Public",
+                Label = "Intern",
                 InformationType = "Release Date",
                 Rank = "None",
-                PropertyDisplayName = "Game.ReleaseDate"
             })
             ;
 
@@ -273,7 +314,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Private",
                 InformationType = "Home Address",
                 Rank = "Medium",
-                PropertyDisplayName = "Home.Address"
             })
             ;
 
@@ -285,7 +325,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Confidential",
                 InformationType = "Owner Name",
                 Rank = "High",
-                PropertyDisplayName = "Home.OwnerName"
             })
             ;
 
@@ -297,7 +336,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Public",
                 InformationType = "Home Size",
                 Rank = "Low",
-                PropertyDisplayName = "Home.Size"
             })
             ;
 
@@ -309,7 +347,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Confidential",
                 InformationType = "Admin Reference",
                 Rank = "High",
-                PropertyDisplayName = "User.AdminId"
             })
             ;
 
@@ -321,7 +358,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Private",
                 InformationType = "Home Address",
                 Rank = "Medium",
-                PropertyDisplayName = "User.Adress"
             })
             ;
 
@@ -333,7 +369,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Internal",
                 InformationType = "Phone Number",
                 Rank = "High",
-                PropertyDisplayName = "User.PhoneNumber"
             })
             ;
 
@@ -345,7 +380,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 Label = "Confidential",
                 InformationType = "Financial Information",
                 Rank = "High",
-                PropertyDisplayName = "User.Salary"
             })
             ;
         }
@@ -358,6 +392,12 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
             migrationBuilder.DropTable(
                 name: "Car");
+
+            migrationBuilder.DropTable(
+                name: "Customers");
+
+            migrationBuilder.DropTable(
+                name: "Documents");
 
             migrationBuilder.DropTable(
                 name: "Games");
