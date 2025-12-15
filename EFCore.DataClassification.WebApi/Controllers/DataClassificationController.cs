@@ -1,4 +1,4 @@
-using EFCore.DataClassification.WebApi.DTOs;
+﻿using EFCore.DataClassification.WebApi.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -51,21 +51,43 @@ public class DataClassificationController : ControllerBase
     [Produces("text/csv")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ExportAsCsv()
-    {
+    public async Task<IActionResult> ExportAsCsv() {
         var classifications = await GetClassificationMetadataAsync();
 
-        var csv = new StringBuilder();
-        csv.AppendLine("Schema,Table,Column,Label,InformationType,Rank");
+        // Okunabilirlik için sıralama (isteğe bağlı)
+        var ordered = classifications
+            .OrderBy(x => x.Schema)
+            .ThenBy(x => x.Table)
+            .ThenBy(x => x.Column);
 
-        foreach (var c in classifications)
-        {
-            csv.AppendLine($"{EscapeCsv(c.Schema)},{EscapeCsv(c.Table)},{EscapeCsv(c.Column)},{EscapeCsv(c.Label)},{EscapeCsv(c.InformationType)},{EscapeCsv(c.Rank)}");
+        const string delimiter = ";";
+
+        var sb = new StringBuilder();
+        sb.Append("Schema").Append(delimiter)
+          .Append("Table").Append(delimiter)
+          .Append("Column").Append(delimiter)
+          .Append("Label").Append(delimiter)
+          .Append("InformationType").Append(delimiter)
+          .Append("Rank").Append("\r\n");
+
+        foreach (var c in ordered) {
+            sb.Append(EscapeCsv(c.Schema, delimiter)).Append(delimiter)
+              .Append(EscapeCsv(c.Table, delimiter)).Append(delimiter)
+              .Append(EscapeCsv(c.Column, delimiter)).Append(delimiter)
+              .Append(EscapeCsv(c.Label, delimiter)).Append(delimiter)
+              .Append(EscapeCsv(c.InformationType, delimiter)).Append(delimiter)
+              .Append(EscapeCsv(c.Rank, delimiter)).Append("\r\n");
         }
 
         var fileName = $"data-classifications-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
-        return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
+
+        
+        var utf8Bom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+        return File(utf8Bom.GetBytes(sb.ToString()), "text/csv; charset=utf-8", fileName);
     }
+
+   
+
 
     /// <summary>
     /// Exports all classification metadata as JSON file.
@@ -270,15 +292,19 @@ public class DataClassificationController : ControllerBase
     /// <summary>
     /// Escapes a value for CSV format.
     /// </summary>
-    private static string EscapeCsv(string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return string.Empty;
+    private static string EscapeCsv(string? value, string delimiter) {
+        value ??= "";
+        var mustQuote =
+            value.Contains(delimiter) ||
+            value.Contains('"') ||
+            value.Contains('\r') ||
+            value.Contains('\n');
 
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
-            return $"\"{value.Replace("\"", "\"\"")}\"";
+        if (!mustQuote) return value;
 
-        return value;
+        // CSV standard: " => ""
+        var escaped = value.Replace("\"", "\"\"");
+        return $"\"{escaped}\"";
     }
 }
 

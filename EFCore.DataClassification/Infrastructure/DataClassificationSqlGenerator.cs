@@ -103,14 +103,8 @@ namespace EFCore.DataClassification.Infrastructure {
         /// 3. Writes SQL Server native sensitivity classification
         /// </remarks>
         /// 
-        private void WriteDataClassificationCore(
-     MigrationCommandListBuilder builder,
-     string schemaName,
-     string tableName,
-     string columnName,
-     string? label,
-     string? informationType,
-     string? rank) {
+        private void WriteDataClassificationCore(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName,string? label,string? informationType,string? rank) {
+           
             if (string.Equals(rank, "None", StringComparison.OrdinalIgnoreCase))
                 rank = null;
 
