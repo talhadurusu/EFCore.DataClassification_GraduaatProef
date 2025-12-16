@@ -470,3 +470,17 @@ In the Web API sample:
 - Integrates tightly with **EF Core migrations** and **SQL Server sensitivity classification**.
 - Includes a ready-to-run **Web API example** and a rich **test suite**.
 - Provides **validation and clear error messages** through `DataClassificationException`.
+
+---
+
+## License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+You are free to:
+
+- ✅ Use commercially
+- ✅ Modify
+- ✅ Distribute
+- ✅ Private use
+- ✅ Sublicense
