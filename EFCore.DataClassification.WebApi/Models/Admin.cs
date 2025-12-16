@@ -5,10 +5,8 @@ namespace EFCore.DataClassification.WebApi.Models {
     public class Admin {
         public int Id { get; set; }
         
-        [DataClassification("Confidential", "Admin Naam", SensitivityRank.Medium)]
-        public string Name { get; set; } = string.Empty;
-        
-       
+   
+       public  int Age { get; set; }
         public string Email { get; set; } = string.Empty;
         
         [DataClassification("Highly Confidential", "Admin Sleutel", SensitivityRank.Critical)]
