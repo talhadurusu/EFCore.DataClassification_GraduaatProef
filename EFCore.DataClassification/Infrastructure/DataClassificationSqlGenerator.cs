@@ -200,14 +200,18 @@ namespace EFCore.DataClassification.Infrastructure {
             var delimitedTable = helper.DelimitIdentifier(tableName, schemaName);
             var delimitedColumn = helper.DelimitIdentifier(columnName);
             var objectName = $"{schemaName}.{tableName}";
+            
+            // Properly escape objectName and columnName for use in string literals to prevent SQL injection
+            var objectNameLiteral = stringMapping.GenerateSqlLiteral(objectName);
+            var columnNameLiteral = stringMapping.GenerateSqlLiteral(columnName);
 
             var innerSql =
                 $"""
                 IF EXISTS (
                     SELECT 1
                     FROM sys.sensitivity_classifications sc
-                    WHERE sc.major_id = OBJECT_ID(N'{objectName}')
-                      AND sc.minor_id = COLUMNPROPERTY(OBJECT_ID(N'{objectName}'), N'{columnName}', 'ColumnId')
+                    WHERE sc.major_id = OBJECT_ID({objectNameLiteral})
+                      AND sc.minor_id = COLUMNPROPERTY(OBJECT_ID({objectNameLiteral}), {columnNameLiteral}, 'ColumnId')
                 )
                     DROP SENSITIVITY CLASSIFICATION FROM {delimitedTable}.{delimitedColumn};
                 """;
