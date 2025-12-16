@@ -108,8 +108,9 @@ This is the rank you use in attributes and Fluent API.
 4. **SQL generation**:
 
    - `DataClassificationSqlGenerator` intercepts these custom operations and:
-     - Writes **extended properties** with `sp_addextendedproperty` / `sp_dropextendedproperty`.
+     - Writes **extended properties** with `sp_addextendedproperty` / `sp_dropextendedproperty` (works on all SQL Server versions).
      - Writes **SQL Server sensitivity classification** using `ADD SENSITIVITY CLASSIFICATION ... WITH (LABEL = ..., INFORMATION_TYPE = ..., RANK = ...)`.
+     - **Automatically detects SQL Server version**: Uses `SERVERPROPERTY('ProductMajorVersion')` to check if the server supports sensitivity classification (SQL Server 2019+). On SQL Server 2017, only extended properties are written; sensitivity classification commands are safely skipped.
    - It validates:
      - Rank values (must be one of the allowed ranks).
      - Label length (max 128 chars).
@@ -338,11 +339,16 @@ This is helpful if you want **manual control** over classification operations in
     - `DataClassification:Label`
     - `DataClassification:InformationType`
     - `DataClassification:Rank`
+  - **Works on all SQL Server versions** (2017+): Extended properties are always written regardless of SQL Server version.
 - Writes **sensitivity classification**:
   - Uses `ADD SENSITIVITY CLASSIFICATION TO [schema].[table].[column] WITH (...)`.
   - Maps rank string values to SQL Server ranks:
     - `"Low" → "LOW"`, `"Medium" → "MEDIUM"`, `"High" → "HIGH"`, `"Critical" → "CRITICAL"`.
   - `"None"` is treated as no sensitivity classification (no rank sent).
+  - **Version-aware execution**: The generator automatically checks SQL Server version using `SERVERPROPERTY('ProductMajorVersion')`:
+    - **SQL Server 2019+ (version 15+)**: Both extended properties AND native sensitivity classification are written.
+    - **SQL Server 2017 (version 14)**: Only extended properties are written. Sensitivity classification commands are skipped safely (wrapped in `IF TRY_CONVERT(int, SERVERPROPERTY('ProductMajorVersion')) >= 15`).
+  - This ensures migrations run successfully on both SQL Server 2017 and 2019+ without errors.
 
 If configuration is invalid, it throws `DataClassificationException` so you get a **clear, early failure**.
 
