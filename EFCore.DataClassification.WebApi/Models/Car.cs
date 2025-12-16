@@ -9,10 +9,10 @@ namespace EFCore.DataClassification.WebApi.Models {
         [DataClassification("Intern", "Car model", SensitivityRank.None)]
         public string Model { get; set; } = string.Empty;
 
-        [DataClassification("Intern", "car relase year", SensitivityRank.None)]
+        [DataClassification("Intern", "Car manufacturing year", SensitivityRank.None)]
         public int Year { get; set; }
 
-       
+        [DataClassification("Confidential", "Vehicle Identification Number", SensitivityRank.High)]
         public string VIN { get; set; } = string.Empty;
 
         [DataClassification("Confidential", "Unique Car Identifier", SensitivityRank.Medium)]

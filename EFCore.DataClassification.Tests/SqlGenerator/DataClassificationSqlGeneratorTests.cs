@@ -17,8 +17,7 @@ namespace EFCore.DataClassification.Tests.SqlGenerator;
 
 public class DataClassificationSqlGeneratorTests {
     [Fact]
-    public void Generate_CreateDataClassificationOperation_ProducesSqlWithExtendedPropertiesAndSensitivity() {
-        // Arrange
+    public void Generate_CreateDataClassificationOperation_ProducesSqlWithExtendedPropertiesAndGuardedSensitivity() {
         var operation = new CreateDataClassificationOperation {
             Schema = "dbo",
             Table = "Users",
@@ -30,16 +29,28 @@ public class DataClassificationSqlGeneratorTests {
 
         var sql = GenerateSql(operation);
 
-        // Assert
+        // Extended properties
         Assert.Contains("sp_addextendedproperty", sql);
         Assert.Contains("DataClassification:Label", sql);
         Assert.Contains("DataClassification:InformationType", sql);
         Assert.Contains("DataClassification:Rank", sql);
+
+        // Version guard
+        Assert.Contains("SERVERPROPERTY('ProductMajorVersion')", sql);
+        Assert.Contains(">= 15", sql);
+
+        // Dynamic SQL execution
+        Assert.Contains("sp_executesql", sql);
+
+        // Sensitivity semantics (NOT literal format!)
         Assert.Contains("ADD SENSITIVITY CLASSIFICATION", sql);
-        Assert.Contains("LABEL = N'Confidential'", sql);
-        Assert.Contains("INFORMATION_TYPE = N'Email Address'", sql);
+        Assert.Contains("LABEL", sql);
+        Assert.Contains("Confidential", sql);
+        Assert.Contains("INFORMATION_TYPE", sql);
+        Assert.Contains("Email Address", sql);
         Assert.Contains("RANK = HIGH", sql);
     }
+
 
     [Fact]
     public void Generate_RemoveDataClassificationOperation_ProducesSqlWithDropStatements() {

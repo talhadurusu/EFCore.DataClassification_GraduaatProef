@@ -37,7 +37,9 @@ The solution also includes:
 ## Requirements
 
 - **.NET 8.0**
-- **SQL Server** (sensitivity classification and extended properties are SQL Server-specific)
+- **SQL Server 2017+**:
+  - **SQL Server 2019 & Azure SQL:** Full support (Native Sensitivity Classification + Extended Properties).
+  - **SQL Server 2017:** Partial support (Extended Properties only). The library automatically detects the version and skips unsupported commands safely.
 - **Entity Framework Core 8** (`Microsoft.EntityFrameworkCore.SqlServer` 8.0.22)
 
 ---

@@ -80,6 +80,7 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
         private void ClearDataClassification(MigrationCommandListBuilder builder, string schemaName, string tableName, string columnName) {
+
             AppendDropExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.Label);
             AppendDropExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.InformationType);
             AppendDropExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.Rank);
@@ -182,47 +183,59 @@ namespace EFCore.DataClassification.Infrastructure {
                      @level2type = N'COLUMN', @level2name = {columnLiteral};
              """);
         }
-
-
         #endregion
 
 
         #region Sensitivity classification helpers
-        private void AppendDropSensitivityClassification(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName) {
+
+
+        private void AppendDropSensitivityClassification(
+            MigrationCommandListBuilder builder,
+            string schemaName,
+            string tableName,
+            string columnName) {
             var helper = Dependencies.SqlGenerationHelper;
             var stringMapping = Dependencies.TypeMappingSource.GetMapping(typeof(string));
 
-            var objectIdName = $"{schemaName}.{tableName}";
-            var objectIdLiteral = stringMapping.GenerateSqlLiteral(objectIdName);
-            var columnLiteral = stringMapping.GenerateSqlLiteral(columnName);
-
             var delimitedTable = helper.DelimitIdentifier(tableName, schemaName);
             var delimitedColumn = helper.DelimitIdentifier(columnName);
+            var objectName = $"{schemaName}.{tableName}";
 
-            builder.AppendLine(
+            var innerSql =
                 $"""
-         IF EXISTS (
-             SELECT 1
-             FROM sys.sensitivity_classifications sc
-             WHERE sc.major_id = OBJECT_ID({objectIdLiteral})
-               AND sc.minor_id = COLUMNPROPERTY(OBJECT_ID({objectIdLiteral}), {columnLiteral}, 'ColumnId')
-         )
-             DROP SENSITIVITY CLASSIFICATION FROM {delimitedTable}.{delimitedColumn};
-         """);
-                
+                IF EXISTS (
+                    SELECT 1
+                    FROM sys.sensitivity_classifications sc
+                    WHERE sc.major_id = OBJECT_ID(N'{objectName}')
+                      AND sc.minor_id = COLUMNPROPERTY(OBJECT_ID(N'{objectName}'), N'{columnName}', 'ColumnId')
+                )
+                    DROP SENSITIVITY CLASSIFICATION FROM {delimitedTable}.{delimitedColumn};
+                """;
+
+            var innerSqlLiteral = stringMapping.GenerateSqlLiteral(innerSql);
+            builder.AppendLine(
+               $"""
+                 IF TRY_CONVERT(int, SERVERPROPERTY('ProductMajorVersion')) >= 15
+                 BEGIN
+                 DECLARE @__dc_stmt nvarchar(max) = {innerSqlLiteral};
+                 EXEC sys.sp_executesql @__dc_stmt;
+                 END
+               """);
+
+
         }
 
 
-        private void AppendSensitivityClassification(MigrationCommandListBuilder builder,string schemaName,string tableName, string columnName,string? label,string? informationType,string? rankString) {
 
-            
-            if (string.IsNullOrWhiteSpace(label)&& string.IsNullOrWhiteSpace(informationType)&& string.IsNullOrWhiteSpace(rankString)) {
+        private void AppendSensitivityClassification(MigrationCommandListBuilder builder, string schemaName, string tableName, string columnName, string? label, string? informationType, string? rankString) {
+            if (string.IsNullOrWhiteSpace(label)
+                && string.IsNullOrWhiteSpace(informationType)
+                && string.IsNullOrWhiteSpace(rankString))
                 return;
-            }
 
             string? sqlRank = null;
             if (!string.IsNullOrWhiteSpace(rankString)) {
-                sqlRank = rankString switch {  
+                sqlRank = rankString switch {
                     "Low" => "LOW",
                     "Medium" => "MEDIUM",
                     "High" => "HIGH",
@@ -233,33 +246,38 @@ namespace EFCore.DataClassification.Infrastructure {
 
             var helper = Dependencies.SqlGenerationHelper;
             var stringMapping = Dependencies.TypeMappingSource.GetMapping(typeof(string));
+
             var fullName = helper.DelimitIdentifier(tableName, schemaName);
             var delimitedColumn = helper.DelimitIdentifier(columnName);
 
-            builder
-                .Append($"ADD SENSITIVITY CLASSIFICATION TO {fullName}.{delimitedColumn}")
-                .AppendLine()
-                .Append("WITH (");
-
             var parts = new List<string>();
 
-            if (!string.IsNullOrWhiteSpace(label)) {
-                var safeLabel = stringMapping.GenerateSqlLiteral(label);
-                parts.Add($"LABEL = {safeLabel}");
-            }
+            if (!string.IsNullOrWhiteSpace(label))
+                parts.Add($"LABEL = {stringMapping.GenerateSqlLiteral(label)}");
 
-            if (!string.IsNullOrWhiteSpace(informationType)) {
-                var safeInfoType = stringMapping.GenerateSqlLiteral(informationType);
-                parts.Add($"INFORMATION_TYPE = {safeInfoType}");
-            }
+            if (!string.IsNullOrWhiteSpace(informationType))
+                parts.Add($"INFORMATION_TYPE = {stringMapping.GenerateSqlLiteral(informationType)}");
 
-            if (!string.IsNullOrWhiteSpace(sqlRank)) {
+            if (!string.IsNullOrWhiteSpace(sqlRank))
                 parts.Add($"RANK = {sqlRank}");
-            }
 
-            builder.Append(string.Join(", ", parts));
-            builder.AppendLine(");");
+            if (parts.Count == 0)
+                return;
+
+            var innerSql =
+                $"ADD SENSITIVITY CLASSIFICATION TO {fullName}.{delimitedColumn} WITH ({string.Join(", ", parts)});";
+
+            var innerSqlLiteral = stringMapping.GenerateSqlLiteral(innerSql);
+            builder.AppendLine(
+                $"""
+                IF TRY_CONVERT(int, SERVERPROPERTY('ProductMajorVersion')) >= 15
+                BEGIN
+                    DECLARE @__dc_stmt nvarchar(max) = {innerSqlLiteral};
+                    EXEC sys.sp_executesql @__dc_stmt;
+                END
+                """);
         }
+
 
         #endregion
 
