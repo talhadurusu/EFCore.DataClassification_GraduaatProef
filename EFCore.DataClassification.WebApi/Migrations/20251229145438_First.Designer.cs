@@ -13,8 +13,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251229124901_DocumentAuthor")]
-    partial class DocumentAuthor
+    [Migration("20251229145438_First")]
+    partial class First
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -64,16 +64,19 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("DataClassification:InformationType", "Bike Brand")
-                        .HasAnnotation("DataClassification:Label", "Public")
+                        .HasAnnotation("DataClassification:Label", "Internal")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
 
                     b.Property<int>("GearCount")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasAnnotation("DataClassification:InformationType", "Bike Gear Count")
+                        .HasAnnotation("DataClassification:Label", "Public")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
-                    b.Property<string>("Owner")
+                    b.Property<string>("SerialNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Bike Owner")
+                        .HasAnnotation("DataClassification:InformationType", "Bike Serial")
                         .HasAnnotation("DataClassification:Label", "Confidential")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
@@ -177,6 +180,9 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .HasAnnotation("DataClassification:InformationType", "Body")
                         .HasAnnotation("DataClassification:Label", "Docs")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("InternalRef")
                         .HasColumnType("nvarchar(max)")

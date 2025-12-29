@@ -12,4 +12,9 @@ namespace EFCore.DataClassification.Models {
         High,
         Critical
     }
+    public sealed record DataClassificationMetadata(
+       string Label,
+       string InformationType,
+       string Rank
+   );
 }

@@ -6,13 +6,18 @@ namespace EFCore.DataClassification.WebApi.Models {
     public class Bike {
         public int Id { get; set; }
 
-        [DataClassification("Public", "Bike Brand", SensitivityRank.Low)]
+        // ✅ Classified - will test Add/Change/Remove
+        [DataClassification("Internal", "Bike Brand", SensitivityRank.Low)]
         public string Brand { get; set; } = string.Empty;
+
+        // ✅ Unclassified - mixed-case tests
         public string Type { get; set; } = string.Empty;
 
-        [DataClassification("Confidential", "Bike Owner", SensitivityRank.High)]
-        public string Owner { get; set; } = string.Empty;
-
+        [DataClassification("Public", "Bike Gear Count", SensitivityRank.High)]
         public int GearCount { get; set; }
+
+        [DataClassification("Confidential", "Bike Serial", SensitivityRank.High)]
+        public string SerialNumber { get; set; } = string.Empty;
+
     }
 }

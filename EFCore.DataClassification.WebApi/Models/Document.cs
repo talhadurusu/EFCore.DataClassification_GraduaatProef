@@ -23,6 +23,11 @@ namespace EFCore.DataClassification.WebApi.Models {
         // CASE: opsiyonel bir “daha hassas” alan (sonradan kaldırma/değiştirme için)
         [DataClassification("Docs", "InternalRef", SensitivityRank.High)]
         public string? InternalRef { get; set; }
+
+        public DateTime CreatedAt {
+            get; set;
+        }
+
     }
 }
 

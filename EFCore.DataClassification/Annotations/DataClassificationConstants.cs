@@ -10,18 +10,15 @@ namespace EFCore.DataClassification.Annotations {
     /// Ensures consistent values across the application.
     /// </summary>
     public static class DataClassificationConstants {
-        
+
+        public const string ClassificationAnnotationKey = "DataClassification";
         // ========================================
         // ANNOTATION NAMES
         // ========================================
-        
-        public const string AnnotationPrefix = "DataClassification:";
-        
-        public const string Label = AnnotationPrefix + "Label";
-        
-        public const string InformationType = AnnotationPrefix + "InformationType";
-        
-        public const string Rank = AnnotationPrefix + "Rank";
+
+        public const string Label = "DataClassification:Label";
+        public const string InformationType = "DataClassification:InformationType";
+        public const string Rank = "DataClassification:Rank";
 
 
         public const int MaxLabelLength = 128;
