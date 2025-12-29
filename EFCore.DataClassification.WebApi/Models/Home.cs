@@ -6,7 +6,8 @@ namespace EFCore.DataClassification.WebApi.Models {
 
 
         public int Id {get; set;}
-       
+
+        [DataClassification("Location", "Home Address", SensitivityRank.Medium)]
         public string Address { get; set; } = string.Empty;
 
         public int Size { get; set; }

@@ -13,7 +13,7 @@ namespace EFCore.DataClassification.WebApi.Models {
         [DataClassification("Docs", "Body", SensitivityRank.Medium)]
         public string Body { get; set; } = string.Empty;
 
-        [DataClassification("Docs", "Author", SensitivityRank.Low)]
+        [DataClassification("Docs", "Yazar", SensitivityRank.Medium)]
         public string Author { get; set; } = string.Empty;
 
         // CASE: başlangıçta classif. yok → sonradan ekleme testi için
