@@ -4,6 +4,23 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>EFCore.DataClassification</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Talha Durusu</Authors>
+    <Description>Entity Framework Core 8 extension library for SQL Server data classification support. Automatically generates SQL Server sensitivity classification metadata and extended properties through migrations.</Description>
+    <PackageTags>EntityFrameworkCore;EFCore;EF;SQLServer;DataClassification;Sensitivity;Migrations;Security</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    
+    <RepositoryUrl>https://github.com/talhadurusu/EFCore.DataClassification_GraduaatProef</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/talhadurusu/EFCore.DataClassification_GraduaatProef</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +29,11 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.22" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.22" />
+  </ItemGroup>
+
+  <!-- Include README.md in the package -->
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

@@ -24,8 +24,6 @@ namespace EFCore.DataClassification.Tests.Infrastructure;
 /// Edge case tests for DataClassificationMigrationsModelDiffer.
 /// These tests catch bugs related to columns WITHOUT classification.
 /// 
-/// CRITICAL: These tests were missing and would have caught the bug where
-/// operations were generated for non-classified columns!
 /// </summary>
 public class DataClassificationMigrationsModelDifferEdgeCasesTests {
     private const string Cs = "Server=.;Database=Dummy;Trusted_Connection=True;TrustServerCertificate=True";

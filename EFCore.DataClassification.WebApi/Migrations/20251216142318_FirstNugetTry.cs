@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class FirstNugetTry : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,7 +19,7 @@ namespace EFCore.DataClassification.WebApi.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Age = table.Column<int>(type: "int", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Adminkey = table.Column<int>(type: "int", nullable: false)
                 },
@@ -83,7 +83,9 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Author = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Author = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Summary = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    InternalRef = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -177,17 +179,6 @@ namespace EFCore.DataClassification.WebApi.Migrations
             migrationBuilder.Operations.Add(new CreateDataClassificationOperation
             {
                 Schema = null,
-                Table = "Admins",
-                Column = "Name",
-                Label = "Confidential",
-                InformationType = "Admin Naam",
-                Rank = "Medium",
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
-            {
-                Schema = null,
                 Table = "Bikes",
                 Column = "Brand",
                 Label = "Public",
@@ -233,9 +224,20 @@ namespace EFCore.DataClassification.WebApi.Migrations
             {
                 Schema = null,
                 Table = "Car",
+                Column = "VIN",
+                Label = "Confidential",
+                InformationType = "Vehicle Identification Number",
+                Rank = "High",
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Car",
                 Column = "Year",
                 Label = "Intern",
-                InformationType = "car relase year",
+                InformationType = "Car manufacturing year",
                 Rank = "None",
             })
             ;
@@ -287,6 +289,61 @@ namespace EFCore.DataClassification.WebApi.Migrations
             migrationBuilder.Operations.Add(new CreateDataClassificationOperation
             {
                 Schema = null,
+                Table = "Documents",
+                Column = "InternalRef",
+                Label = "Docs",
+                InformationType = "InternalRef",
+                Rank = "High",
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Documents",
+                Column = "Summary",
+                Label = "Docs",
+                InformationType = "Summary",
+                Rank = "Low",
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Documents",
+                Column = "Title",
+                Label = "Docs",
+                InformationType = "Title",
+                Rank = "None",
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "Description",
+                Label = "Public",
+                InformationType = "Game Description",
+                Rank = "None",
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
+                Table = "Games",
+                Column = "Genre",
+                Label = "Public",
+                InformationType = "Game Genre",
+                Rank = "None",
+            })
+            ;
+
+            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
+            {
+                Schema = null,
                 Table = "Games",
                 Column = "PublisherUnikeUnitID",
                 Label = "Very Confidential",
@@ -309,33 +366,11 @@ namespace EFCore.DataClassification.WebApi.Migrations
             migrationBuilder.Operations.Add(new CreateDataClassificationOperation
             {
                 Schema = null,
-                Table = "Homes",
-                Column = "Address",
-                Label = "Private",
-                InformationType = "Home Address",
-                Rank = "Medium",
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Homes",
-                Column = "OwnerName",
-                Label = "Confidential",
-                InformationType = "Owner Name",
-                Rank = "High",
-            })
-            ;
-
-            migrationBuilder.Operations.Add(new CreateDataClassificationOperation
-            {
-                Schema = null,
-                Table = "Homes",
-                Column = "Size",
+                Table = "Games",
+                Column = "Title",
                 Label = "Public",
-                InformationType = "Home Size",
-                Rank = "Low",
+                InformationType = "Game Title",
+                Rank = "None",
             })
             ;
 
