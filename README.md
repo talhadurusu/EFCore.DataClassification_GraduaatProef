@@ -103,7 +103,12 @@ This is the rank you use in attributes and Fluent API.
    - It adds custom migration operations:
      - `CreateDataClassificationOperation`
      - `RemoveDataClassificationOperation`
-   - It also manages change detection and ordering, so when a column is dropped the classification remove operation is executed before the column drop.
+   - It manages change detection and ordering:
+     - When a column is **dropped**, the classification remove operation is executed **before** the column drop.
+     - When a column is **renamed**, it removes classification from the old name and adds it to the new name.
+     - When a column is **altered** (type/nullability change), classification operations are ordered correctly.
+     - When classification is **added, removed, or changed**, appropriate operations are generated.
+   - Uses optimized sorting logic to ensure correct operation order for all scenarios.
 
 4. **SQL generation**:
 
@@ -418,7 +423,7 @@ The `EFCore.DataClassification.WebApi` project demonstrates an ASP.NET Core Web 
 
 ## Tests
 
-The `EFCore.DataClassification.Tests` project includes tests for:
+The `EFCore.DataClassification.Tests` project includes **55 comprehensive tests** covering:
 
 - **Attributes** – e.g. `DataClassificationAttributeTests` confirms:
   - Properties set correctly.
@@ -432,11 +437,29 @@ The `EFCore.DataClassification.Tests` project includes tests for:
   - `DataClassificationMigrationsModelDiffer`:
     - Adds `CreateDataClassificationOperation` for new classified columns.
     - Adds `RemoveDataClassificationOperation` for removed/changed classification.
-    - Sorts operations correctly when dropping columns.
+    - **Critical ordering tests** (`CriticalOrderingTests`): Bug-catcher style tests that verify:
+      - `RemoveDataClassification` comes **before** `DropColumn` operations.
+      - `RemoveDataClassification` comes **before** `RenameColumn` operations.
+      - `CreateDataClassification` comes **after** `RenameColumn` operations.
+      - `RemoveDataClassification` comes **before** `AlterColumn` operations.
+      - `CreateDataClassification` comes **after** `AlterColumn` operations.
+    - **Edge case tests** (`DataClassificationMigrationsModelDifferEdgeCasesTests`):
+      - Columns without classification don't generate operations.
+      - Mixed scenarios (some classified, some not).
+      - Validation for label/information type length limits.
+    - **Missing critical tests** (`MissingCriticalTests`):
+      - Multiple column drops with correct ordering.
+      - Mixed operations (drop, rename, alter) with correct ordering.
+      - Custom schema handling.
+      - Schema equivalence (null vs "dbo").
   - `DataClassificationSqlGeneratorTests`:
     - Generated SQL for extended properties and sensitivity classification.
+    - SQL Server version detection and conditional execution.
 - **Integration tests**:
   - Verify end-to-end behavior from model configuration to generated migrations and SQL.
+  - Test real-world scenarios with multiple models and complex schema changes.
+
+**Test Philosophy**: The test suite emphasizes **bug-catcher style tests** that explicitly verify operation ordering and edge cases. These tests are designed to fail immediately if the sorting logic or operation generation is incorrect, ensuring reliability and maintainability.
 
 To run tests:
 
@@ -462,14 +485,28 @@ In the Web API sample:
 
 ---
 
+## Code Quality & Performance
+
+The library has been optimized for maintainability and performance:
+
+- **Optimized sorting logic**: Refactored operation sorting to use a single pass with pattern matching, ensuring correct order for all column operations (drop, rename, alter).
+- **Conditional allocations**: HashSet collections are only created when needed (e.g., when rename operations exist).
+- **Code deduplication**: Helper methods (`AddCreateOperationIfNeeded`, `AddRemoveOperationIfNeeded`) eliminate code duplication.
+- **XML documentation**: Key methods include comprehensive XML documentation for better IntelliSense support.
+- **Comprehensive test coverage**: 55 tests including bug-catcher style tests that verify critical operation ordering.
+
+---
+
 ## Summary
 
 **EFCore.DataClassification** is a focused EF Core 8 extension that:
 
 - Adds an intuitive attribute + Fluent API for **data classification**.
 - Integrates tightly with **EF Core migrations** and **SQL Server sensitivity classification**.
-- Includes a ready-to-run **Web API example** and a rich **test suite**.
+- Includes a ready-to-run **Web API example** and a comprehensive **test suite** (55 tests).
 - Provides **validation and clear error messages** through `DataClassificationException`.
+- Ensures **correct operation ordering** for all migration scenarios (add, remove, rename, alter columns).
+- Optimized for **performance and maintainability** with clean, well-documented code.
 
 ---
 

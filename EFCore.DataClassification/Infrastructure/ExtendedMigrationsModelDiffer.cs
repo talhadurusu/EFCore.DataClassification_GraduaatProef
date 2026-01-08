@@ -241,6 +241,15 @@ namespace EFCore.DataClassification.Infrastructure {
                 ops.Add(GenerateRemoveOperation(column));
         }
 
+        /// <summary>
+        /// Gets the first mapped property for the given column.
+        /// </summary>
+        /// <param name="column">The column to get the mapped property for.</param>
+        /// <returns>The first mapped property, or <c>null</c> if no property is mapped to this column.</returns>
+        /// <remarks>
+        /// Uses <see cref="Enumerable.FirstOrDefault{TSource}(IEnumerable{TSource})"/> to return the first mapped property.
+        /// In typical EF Core scenarios, a column maps to exactly one property, so this returns the expected property.
+        /// </remarks>
         private static IProperty? GetMappedProperty(IColumn column)
             => column.PropertyMappings.FirstOrDefault()?.Property;
 
