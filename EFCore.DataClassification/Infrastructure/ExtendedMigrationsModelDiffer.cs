@@ -101,6 +101,9 @@ namespace EFCore.DataClassification.Infrastructure {
             var sourceHasClassification = sourceProperty is not null && HasClassification(sourceProperty);
             var targetHasClassification = targetProperty is not null && HasClassification(targetProperty);
 
+            // Column renamed? (compute early so earlier branches can use it)
+            var isRenamed = !string.Equals(source.Name, target.Name, StringComparison.OrdinalIgnoreCase);
+
             // Mapping removed
             if (sourceProperty is not null && targetProperty is null) {
                 if (sourceHasClassification)
@@ -117,7 +120,8 @@ namespace EFCore.DataClassification.Infrastructure {
 
             // Both mapped
             if (sourceHasClassification && !targetHasClassification) {
-                ops.Add(GenerateRemoveOperation(target));
+                // If renamed, remove must target the OLD column name (source)
+                ops.Add(GenerateRemoveOperation(isRenamed ? source : target));
                 return ops;
             }
 
@@ -126,9 +130,6 @@ namespace EFCore.DataClassification.Infrastructure {
                 return ops;
             }
 
-            // Column renamed: if names differ, we need to remove from old name and add to new name
-            var isRenamed = !string.Equals(source.Name, target.Name, StringComparison.OrdinalIgnoreCase);
-            
             if (sourceHasClassification && targetHasClassification) {
                 if (isRenamed) {
                     // Column renamed: remove from old name, add to new name

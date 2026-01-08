@@ -18,8 +18,8 @@ namespace EFCore.DataClassification.WebApi.Models {
         public string? Email { get; set; }
 
         // CASE: Phone should be string (formatting/+32/leading zero)
-        [DataClassification("Confidential", "Admin Phone Number", SensitivityRank.High)]
-        public string PhoneNumber { get; set; } = string.Empty;
+       
+        public string PhoneNo { get; set; } = string.Empty;
 
         // CASE: Medium sensitivity (unique-ish identifier, ama her zaman High olmak zorunda değil)
         [DataClassification("Confidential", "Admin Inscription Number", SensitivityRank.Medium)]
