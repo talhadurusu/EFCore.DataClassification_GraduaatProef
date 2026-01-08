@@ -266,7 +266,9 @@ namespace EFCore.DataClassification.Infrastructure {
                     "Medium" => "MEDIUM",
                     "High" => "HIGH",
                     "Critical" => "CRITICAL",
-                    _ => null
+                    _ => throw new DataClassificationException(
+                        $"Invalid DataClassification Rank '{rankString}' on '{schemaName}.{tableName}.{columnName}'. " +
+                        $"Allowed values: {DataClassificationConstants.GetAllowedRanksString()}.")
                 };
             }
 
