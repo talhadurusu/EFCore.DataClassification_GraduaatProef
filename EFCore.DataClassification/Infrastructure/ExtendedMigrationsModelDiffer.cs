@@ -40,12 +40,7 @@ namespace EFCore.DataClassification.Infrastructure {
             var ops = base.Add(target, diffContext).ToList();
 
             foreach (var column in target.Columns) {
-                var prop = GetMappedProperty(column);
-                if (prop is null)
-                    continue;
-
-                if (HasClassification(prop))
-                    ops.Add(GenerateCreateOperation(column, prop));
+                AddCreateOperationIfNeeded(ops, column);
             }
 
             return ops;
@@ -54,27 +49,41 @@ namespace EFCore.DataClassification.Infrastructure {
         protected override IEnumerable<MigrationOperation> Diff(ITable source, ITable target, DiffContext diffContext) {
             var ops = base.Diff(source, target, diffContext).ToList();
 
+            // Check if there are any RenameColumnOperations - if so, those columns are handled in Diff(IColumn)
+            var renameOps = ops.OfType<RenameColumnOperation>().ToList();
+            HashSet<string>? renamedOldNames = null;
+            HashSet<string>? renamedNewNames = null;
+            
+            if (renameOps.Count > 0) {
+                renamedOldNames = new HashSet<string>(renameOps.Select(r => r.Name), StringComparer.OrdinalIgnoreCase);
+                renamedNewNames = new HashSet<string>(renameOps.Select(r => r.NewName), StringComparer.OrdinalIgnoreCase);
+            }
+
             var sourceByName = source.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
             var targetByName = target.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
 
-            // Added columns
+            // Added columns (but not renamed ones - those are handled in Diff(IColumn))
             foreach (var (name, targetColumn) in targetByName) {
                 if (sourceByName.ContainsKey(name))
                     continue;
+                
+                // Skip if this is a renamed column
+                if (renamedNewNames?.Contains(name) == true)
+                    continue;
 
-                var prop = GetMappedProperty(targetColumn);
-                if (prop is not null && HasClassification(prop))
-                    ops.Add(GenerateCreateOperation(targetColumn, prop));
+                AddCreateOperationIfNeeded(ops, targetColumn);
             }
 
-            // Removed columns
+            // Removed columns (but not renamed ones - those are handled in Diff(IColumn))
             foreach (var (name, sourceColumn) in sourceByName) {
                 if (targetByName.ContainsKey(name))
                     continue;
+                
+                // Skip if this is a renamed column
+                if (renamedOldNames?.Contains(name) == true)
+                    continue;
 
-                var prop = GetMappedProperty(sourceColumn);
-                if (prop is not null && HasClassification(prop))
-                    ops.Add(GenerateRemoveOperation(sourceColumn));
+                AddRemoveOperationIfNeeded(ops, sourceColumn);
             }
 
             return ops;
@@ -83,43 +92,53 @@ namespace EFCore.DataClassification.Infrastructure {
         protected override IEnumerable<MigrationOperation> Diff(IColumn source, IColumn target, DiffContext diffContext) {
             var ops = base.Diff(source, target, diffContext).ToList();
 
-            var sProp = GetMappedProperty(source);
-            var tProp = GetMappedProperty(target);
+            var sourceProperty = GetMappedProperty(source);
+            var targetProperty = GetMappedProperty(target);
 
-            if (sProp is null && tProp is null)
+            if (sourceProperty is null && targetProperty is null)
                 return ops;
 
-            var sHas = sProp is not null && HasClassification(sProp);
-            var tHas = tProp is not null && HasClassification(tProp);
+            var sourceHasClassification = sourceProperty is not null && HasClassification(sourceProperty);
+            var targetHasClassification = targetProperty is not null && HasClassification(targetProperty);
 
             // Mapping removed
-            if (sProp is not null && tProp is null) {
-                if (sHas)
+            if (sourceProperty is not null && targetProperty is null) {
+                if (sourceHasClassification)
                     ops.Add(GenerateRemoveOperation(source));
                 return ops;
             }
 
             // Mapping added
-            if (sProp is null && tProp is not null) {
-                if (tHas)
-                    ops.Add(GenerateCreateOperation(target, tProp));
+            if (sourceProperty is null && targetProperty is not null) {
+                if (targetHasClassification)
+                    ops.Add(GenerateCreateOperation(target, targetProperty));
                 return ops;
             }
 
             // Both mapped
-            if (sHas && !tHas) {
+            if (sourceHasClassification && !targetHasClassification) {
                 ops.Add(GenerateRemoveOperation(target));
                 return ops;
             }
 
-            if (!sHas && tHas) {
-                ops.Add(GenerateCreateOperation(target, tProp!));
+            if (!sourceHasClassification && targetHasClassification) {
+                ops.Add(GenerateCreateOperation(target, targetProperty!));
                 return ops;
             }
 
-            if (sHas && tHas && HasDataClassificationChanged(sProp!, tProp!)) {
-                ops.Add(GenerateRemoveOperation(target));
-                ops.Add(GenerateCreateOperation(target, tProp!));
+            // Column renamed: if names differ, we need to remove from old name and add to new name
+            var isRenamed = !string.Equals(source.Name, target.Name, StringComparison.OrdinalIgnoreCase);
+            
+            if (sourceHasClassification && targetHasClassification) {
+                if (isRenamed) {
+                    // Column renamed: remove from old name, add to new name
+                    ops.Add(GenerateRemoveOperation(source));
+                    ops.Add(GenerateCreateOperation(target, targetProperty!));
+                } else if (HasDataClassificationChanged(sourceProperty!, targetProperty!)) {
+                    // Classification changed but column name same
+                    ops.Add(GenerateRemoveOperation(target));
+                    ops.Add(GenerateCreateOperation(target, targetProperty!));
+                }
             }
 
             return ops;
@@ -128,29 +147,98 @@ namespace EFCore.DataClassification.Infrastructure {
         protected override IReadOnlyList<MigrationOperation> Sort(IEnumerable<MigrationOperation> operations, DiffContext diffContext) {
             var sorted = base.Sort(operations, diffContext).ToList();
 
+            // Strategy: For each column operation (Drop/Rename/Alter), ensure:
+            // 1. RemoveDataClassification comes BEFORE the column operation
+            // 2. CreateDataClassification comes AFTER the column operation
+            // This maintains SQL execution order: DROP SENSITIVITY → ALTER COLUMN → ADD SENSITIVITY
+
             for (var i = 0; i < sorted.Count; i++) {
-                if (sorted[i] is not DropColumnOperation drop)
+                var columnOp = sorted[i];
+                
+                // Identify column operations that need classification ordering
+                var (schema, table, oldColumn, newColumn) = columnOp switch {
+                    DropColumnOperation drop => (drop.Schema, drop.Table, drop.Name, (string?)null),
+                    RenameColumnOperation rename => (rename.Schema, rename.Table, rename.Name, rename.NewName),
+                    AlterColumnOperation alter => (alter.Schema, alter.Table, alter.Name, (string?)null),
+                    _ => (null, null, null, null)
+                };
+
+                if (table == null || oldColumn == null)
                     continue;
 
-                var removeIdx = sorted.FindIndex(op =>
-                    op is RemoveDataClassificationOperation remove
-                    && string.Equals(remove.Schema ?? drop.Schema, drop.Schema, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(remove.Table, drop.Table, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(remove.Column, drop.Name, StringComparison.OrdinalIgnoreCase));
+                // Step 1: Move RemoveDataClassification BEFORE the column operation
+                MoveRemoveOperationBefore(sorted, ref i, schema, table, oldColumn);
 
-                if (removeIdx >= 0 && removeIdx > i) {
-                    var remove = sorted[removeIdx];
-                    sorted.RemoveAt(removeIdx);
-                    sorted.Insert(i, remove);
-                }
+                // Step 2: Move CreateDataClassification AFTER the column operation
+                // For rename, use the new column name; otherwise use the old column name
+                var targetColumn = newColumn ?? oldColumn;
+                MoveCreateOperationAfter(sorted, i, schema, table, targetColumn);
             }
 
             return sorted;
         }
 
+        /// <summary>
+        /// Moves RemoveDataClassificationOperation before the target index if it exists after it.
+        /// </summary>
+        private static void MoveRemoveOperationBefore(List<MigrationOperation> sorted, ref int targetIdx, string? schema, string table, string column) {
+            var removeIdx = sorted.FindIndex(op =>
+                op is RemoveDataClassificationOperation remove
+                && SchemaEquals(remove.Schema, schema)
+                && string.Equals(remove.Table, table, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(remove.Column, column, StringComparison.OrdinalIgnoreCase));
+
+            if (removeIdx >= 0 && removeIdx > targetIdx) {
+                var remove = sorted[removeIdx];
+                sorted.RemoveAt(removeIdx);
+                sorted.Insert(targetIdx, remove);
+                targetIdx++; // Adjust target index since we inserted before it
+            }
+        }
+
+        /// <summary>
+        /// Moves CreateDataClassificationOperation after the target index if it exists before or at it.
+        /// </summary>
+        private static void MoveCreateOperationAfter(List<MigrationOperation> sorted, int targetIdx, string? schema, string table, string column) {
+            var createIdx = sorted.FindIndex(op =>
+                op is CreateDataClassificationOperation create
+                && SchemaEquals(create.Schema, schema)
+                && string.Equals(create.Table, table, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(create.Column, column, StringComparison.OrdinalIgnoreCase));
+
+            if (createIdx >= 0 && createIdx <= targetIdx) {
+                var create = sorted[createIdx];
+                sorted.RemoveAt(createIdx);
+                // Insert after the target operation (adjust index if we removed before target)
+                var insertIdx = createIdx < targetIdx ? targetIdx : targetIdx + 1;
+                sorted.Insert(insertIdx, create);
+            }
+        }
+
+        /// <summary>
+        /// Compares schemas considering null and "dbo" as equivalent.
+        /// </summary>
+        private static bool SchemaEquals(string? schema1, string? schema2) {
+            var s1 = string.IsNullOrEmpty(schema1) ? DataClassificationConstants.DefaultSchema : schema1;
+            var s2 = string.IsNullOrEmpty(schema2) ? DataClassificationConstants.DefaultSchema : schema2;
+            return string.Equals(s1, s2, StringComparison.OrdinalIgnoreCase);
+        }
+
         #endregion
 
         #region Helpers
+
+        private static void AddCreateOperationIfNeeded(List<MigrationOperation> ops, IColumn column) {
+            var prop = GetMappedProperty(column);
+            if (prop is not null && HasClassification(prop))
+                ops.Add(GenerateCreateOperation(column, prop));
+        }
+
+        private static void AddRemoveOperationIfNeeded(List<MigrationOperation> ops, IColumn column) {
+            var prop = GetMappedProperty(column);
+            if (prop is not null && HasClassification(prop))
+                ops.Add(GenerateRemoveOperation(column));
+        }
 
         private static IProperty? GetMappedProperty(IColumn column)
             => column.PropertyMappings.FirstOrDefault()?.Property;

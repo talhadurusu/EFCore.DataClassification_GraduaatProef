@@ -9,11 +9,13 @@ namespace EFCore.DataClassification.Extensions {
     public class DataClassificationDbContextOptionsExtension : IDbContextOptionsExtension {
         public void ApplyServices(IServiceCollection services) {
     
-            services.AddScoped<IMigrationsSqlGenerator, DataClassificationSqlGenerator>();
+        //    services.AddScoped<IMigrationsSqlGenerator, DataClassificationSqlGenerator>();
            
-            services.AddScoped<IMigrationsModelDiffer, DataClassificationMigrationsModelDiffer>();
-        
-            
+         //   services.AddScoped<IMigrationsModelDiffer, DataClassificationMigrationsModelDiffer>();
+
+            services.Replace(ServiceDescriptor.Scoped<IMigrationsSqlGenerator, DataClassificationSqlGenerator>());
+            services.Replace(ServiceDescriptor.Scoped<IMigrationsModelDiffer, DataClassificationMigrationsModelDiffer>());
+
         }
 
         public DbContextOptionsExtensionInfo Info => new ExtensionInfo(this);

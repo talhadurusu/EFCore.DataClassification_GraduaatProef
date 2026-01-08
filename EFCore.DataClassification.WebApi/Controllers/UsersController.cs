@@ -161,7 +161,7 @@ public class UsersController : ControllerBase
             return Ok(Array.Empty<UserResponseDto>());
 
         var users = await _context.Users
-            .Where(u => u.Name.Contains(query) || u.Surname.Contains(query))
+            .Where(u => u.UserName.Contains(query))
             .ToListAsync();
 
         var dtos = _mapper.Map<List<UserResponseDto>>(users);

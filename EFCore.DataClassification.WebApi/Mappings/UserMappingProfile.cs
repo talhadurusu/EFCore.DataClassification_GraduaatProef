@@ -23,18 +23,17 @@ public class UserMappingProfile : Profile
             .ForMember(dest => dest.Admin, opt => opt.Ignore())
             .ForMember(dest => dest.Adress, 
                        opt => opt.MapFrom(src => src.Address ?? string.Empty))
-            .ForMember(dest => dest.Name, 
-                       opt => opt.MapFrom(src => src.Name))
-            .ForMember(dest => dest.Surname, 
-                       opt => opt.MapFrom(src => src.Surname))
+            .ForMember(dest => dest.UserName, 
+                       opt => opt.MapFrom(src => (src.Name + " " + src.Surname).Trim()))
             .ForMember(dest => dest.Email, 
                        opt => opt.MapFrom(src => src.Email ?? string.Empty))
             .ForMember(dest => dest.PhoneNumber, 
                        opt => opt.MapFrom(src => src.PhoneNumber ?? string.Empty))
-            .ForMember(dest => dest.Salary, 
-                       opt => opt.MapFrom(src => src.Salary ?? 0))
             .ForMember(dest => dest.AdminId, 
-                       opt => opt.MapFrom(src => src.AdminId));
+                       opt => opt.MapFrom(src => src.AdminId))
+            .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.LastPasswordChangeUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore());
 
         // UpdateUserDto -> User (patch mapping)
         CreateMap<UpdateUserDto, User>()

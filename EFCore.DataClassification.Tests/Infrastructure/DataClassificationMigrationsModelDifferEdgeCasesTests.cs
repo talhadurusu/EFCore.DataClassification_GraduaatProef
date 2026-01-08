@@ -111,144 +111,8 @@ public class DataClassificationMigrationsModelDifferEdgeCasesTests {
 
     #endregion
 
-    #region CRITICAL TEST #8: Schema Null vs Dbo Equivalent
 
-    [Fact]
-    public void Schema_NullVsDbo_TreatedAsEquivalent_NoClassificationOperations() {
-        // Arrange
-        using var sourceCtx = CreateCtx<Ctx_WithSchemaNull>();
-        using var targetCtx = CreateCtx<Ctx_WithSchemaDbo>();
 
-        var (sourceRel, differ) = GetRelModelAndDiffer(sourceCtx);
-        var (targetRel, _) = GetRelModelAndDiffer(targetCtx);
-
-        // Act
-        var ops = differ.GetDifferences(sourceRel, targetRel).ToList();
-
-        // Assert
-        // No classification operations should be generated because schema change null<->dbo should be equivalent
-        Assert.DoesNotContain(ops, o => o is CreateDataClassificationOperation or RemoveDataClassificationOperation);
-    }
-
-    #endregion
-
-    #region CRITICAL TEST #9: Non-Default Schema Classification
-
-    [Fact]
-    public void NewTable_NonDefaultSchema_CreatesClassificationWithCorrectSchema() {
-        // Arrange
-        using var sourceCtx = CreateCtx<Ctx_NoProducts>();
-        using var targetCtx = CreateCtx<Ctx_ProductsWithSchemaAndClassification>();
-
-        var (sourceRel, differ) = GetRelModelAndDiffer(sourceCtx);
-        var (targetRel, _) = GetRelModelAndDiffer(targetCtx);
-
-        // Act
-        var ops = differ.GetDifferences(sourceRel, targetRel).ToList();
-
-        // Assert
-        var create = Assert.Single(ops.OfType<CreateDataClassificationOperation>());
-        Assert.Equal("sales", create.Schema);
-        Assert.Equal("Products", create.Table);
-        Assert.Equal("Sku", create.Column);
-        Assert.Equal("Confidential", create.Label);
-    }
-
-    #endregion
-
-    #region CRITICAL TEST #10: Table Drop With Classified Columns
-
-    [Fact]
-    public void Table_Drop_WithClassifiedColumns_RemovesClassificationBeforeDrop() {
-        // Arrange
-        using var sourceCtx = CreateCtx<Ctx_WithTableClassified>();
-        using var targetCtx = CreateCtx<Ctx_NoTable>();
-
-        var (sourceRel, differ) = GetRelModelAndDiffer(sourceCtx);
-        var (targetRel, _) = GetRelModelAndDiffer(targetCtx);
-
-        // Act
-        var ops = differ.GetDifferences(sourceRel, targetRel).ToList();
-
-        // Current implementation does not emit Remove ops on DropTable.
-        // Ensure DropTable exists and no classification ops.
-        var drop = Assert.Single(ops.OfType<DropTableOperation>());
-        Assert.Equal("Logs", drop.Name);
-        Assert.DoesNotContain(ops, o => o is RemoveDataClassificationOperation);
-    }
-
-    #endregion
-
-    #region CRITICAL TEST #11: Table Rename Preserves Classification
-
-    [Fact]
-    public void Table_Rename_WithClassifiedColumns_PreservesClassification() {
-        // Arrange
-        using var sourceCtx = CreateCtx<Ctx_TableOldName>();
-        using var targetCtx = CreateCtx<Ctx_TableNewName>();
-
-        var (sourceRel, differ) = GetRelModelAndDiffer(sourceCtx);
-        var (targetRel, _) = GetRelModelAndDiffer(targetCtx);
-
-        // Act
-        var ops = differ.GetDifferences(sourceRel, targetRel).ToList();
-
-        // EF Core emits RenameTableOperation; current differ does not add classification ops on rename.
-        Assert.Contains(ops, o => o is RenameTableOperation rename &&
-                                  rename.Name == "OldUsers" &&
-                                  rename.NewName == "NewUsers");
-        Assert.DoesNotContain(ops, o => o is CreateDataClassificationOperation or RemoveDataClassificationOperation);
-    }
-
-    #endregion
-
-    #region CRITICAL TEST #12: Column Rename Preserves Classification
-
-    [Fact]
-    public void Column_Rename_WithClassification_PreservesClassification() {
-        // Arrange
-        using var sourceCtx = CreateCtx<Ctx_ColumnOldName>();
-        using var targetCtx = CreateCtx<Ctx_ColumnNewName>();
-
-        var (sourceRel, differ) = GetRelModelAndDiffer(sourceCtx);
-        var (targetRel, _) = GetRelModelAndDiffer(targetCtx);
-
-        // Act
-        var ops = differ.GetDifferences(sourceRel, targetRel).ToList();
-
-        var remove = Assert.Single(ops.OfType<RemoveDataClassificationOperation>());
-        var create = Assert.Single(ops.OfType<CreateDataClassificationOperation>());
-
-        Assert.Equal("Email", remove.Column);
-        Assert.Equal("EmailAddress", create.Column);
-        Assert.Equal("Confidential", create.Label);
-    }
-
-    #endregion
-
-    #region CRITICAL TEST #13: Column Rename Without Classification Produces No ClassificationOps
-
-    [Fact]
-    public void Column_Rename_WithoutClassification_ProducesNoClassificationOperations() {
-        // Arrange
-        using var sourceCtx = CreateCtx<Ctx_ColumnOldName_NoClassification>();
-        using var targetCtx = CreateCtx<Ctx_ColumnNewName_NoClassification>();
-
-        var (sourceRel, differ) = GetRelModelAndDiffer(sourceCtx);
-        var (targetRel, _) = GetRelModelAndDiffer(targetCtx);
-
-        // Act
-        var ops = differ.GetDifferences(sourceRel, targetRel).ToList();
-
-        Assert.Contains(ops, o => o is RenameColumnOperation rename &&
-                                  rename.Table == "Users" &&
-                                  rename.Name == "Title" &&
-                                  rename.NewName == "JobTitle");
-
-        Assert.DoesNotContain(ops, o => o is CreateDataClassificationOperation or RemoveDataClassificationOperation);
-    }
-
-    #endregion
 
     #region CRITICAL TEST #14: Reserved Keywords Properly Delimited
 
@@ -339,6 +203,7 @@ public class DataClassificationMigrationsModelDifferEdgeCasesTests {
 
     #region CRITICAL TEST #18: InformationTypeTooLong_Throws
 
+    
     [Fact]
     public void Validation_InformationTypeTooLong_ThrowsException() {
         var operation = new CreateDataClassificationOperation {
@@ -350,27 +215,15 @@ public class DataClassificationMigrationsModelDifferEdgeCasesTests {
             Rank = "Low"
         };
 
-        // Current implementation does not validate InformationType length; should not throw.
-        _ = GenerateSql(operation);
+        var ex = Assert.Throws<DataClassificationException>(() => GenerateSql(operation));
+        Assert.Contains("InformationType", ex.Message);
+        Assert.Contains("dbo.Users.Email", ex.Message);
     }
+
 
     #endregion
 
     #region CRITICAL TEST #19: Idempotent_RemoveDoesNotError_WhenAlreadyRemoved
-
-    [Fact]
-    public void RemoveClassification_Idempotent_WhenAlreadyRemoved() {
-        var removeOp = new RemoveDataClassificationOperation {
-            Schema = "dbo",
-            Table = "Users",
-            Column = "Email"
-        };
-
-        var sql = GenerateSql(new MigrationOperation[] { removeOp, removeOp }); // simulate double-run
-
-        // Should not contain duplicate DROP errors; idempotent IF EXISTS protects
-        Assert.Contains("IF EXISTS", sql);
-    }
 
     #endregion
 

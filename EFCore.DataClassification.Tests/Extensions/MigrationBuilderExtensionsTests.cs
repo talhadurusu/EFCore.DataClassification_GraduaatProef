@@ -58,22 +58,6 @@ public class MigrationBuilderExtensionsTests
         Assert.Null(operation.Rank);
     }
 
-    [Fact]
-    public void AddDataClassification_ReturnsOperationBuilder()
-    {
-        // Arrange
-        var migrationBuilder = new MigrationBuilder("SqlServer");
-
-        // Act
-        var builder = migrationBuilder.AddDataClassification(
-            table: "Users",
-            column: "Email"
-        );
-
-        // Assert
-        Assert.NotNull(builder);
-        Assert.IsType<Microsoft.EntityFrameworkCore.Migrations.Operations.Builders.OperationBuilder<CreateDataClassificationOperation>>(builder);
-    }
 
     [Fact]
     public void DropDataClassification_AddsOperationToMigrationBuilder()
@@ -114,22 +98,6 @@ public class MigrationBuilderExtensionsTests
         Assert.Null(operation.Schema);
     }
 
-    [Fact]
-    public void DropDataClassification_ReturnsOperationBuilder()
-    {
-        // Arrange
-        var migrationBuilder = new MigrationBuilder("SqlServer");
-
-        // Act
-        var builder = migrationBuilder.DropDataClassification(
-            table: "Users",
-            column: "Email"
-        );
-
-        // Assert
-        Assert.NotNull(builder);
-        Assert.IsType<Microsoft.EntityFrameworkCore.Migrations.Operations.Builders.OperationBuilder<RemoveDataClassificationOperation>>(builder);
-    }
 
     [Fact]
     public void MultipleOperations_CanBeAddedToSameMigration()

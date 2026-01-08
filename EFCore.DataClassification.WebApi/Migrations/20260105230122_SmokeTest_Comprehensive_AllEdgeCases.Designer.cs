@@ -5,6 +5,7 @@ using EFCore.DataClassification.WebApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,9 +13,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260105230122_SmokeTest_Comprehensive_AllEdgeCases")]
+    partial class SmokeTest_Comprehensive_AllEdgeCases
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -272,44 +275,44 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Category")
-                        .IsRequired()
+                    b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Game Category")
+                        .HasAnnotation("DataClassification:InformationType", "Game Description")
                         .HasAnnotation("DataClassification:Label", "Public")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("Developer")
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Developer Name")
+                        .HasAnnotation("DataClassification:Label", "Internal")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
 
-                    b.Property<bool>("IsMultiplayer")
-                        .HasColumnType("bit");
+                    b.Property<string>("Genre")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Game Genre")
+                        .HasAnnotation("DataClassification:Label", "Public")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.None);
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)")
                         .HasAnnotation("DataClassification:InformationType", "Game Price")
                         .HasAnnotation("DataClassification:Label", "Financial")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
-
-                    b.Property<int>("ReleaseYear")
-                        .HasColumnType("int")
-                        .HasAnnotation("DataClassification:InformationType", "Release Year")
-                        .HasAnnotation("DataClassification:Label", "Public")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.None);
-
-                    b.Property<string>("Studio")
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Game Studio")
-                        .HasAnnotation("DataClassification:Label", "Internal")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
+
+                    b.Property<string>("PublisherID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Publisher ID")
+                        .HasAnnotation("DataClassification:Label", "Public")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "Game Title")
-                        .HasAnnotation("DataClassification:Label", "Public")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.None);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
@@ -334,26 +337,26 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("DataClassification:InformationType", "Home Address")
                         .HasAnnotation("DataClassification:Label", "Location")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
                     b.Property<string>("OwnerName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("DataClassification:InformationType", "Home Owner Name")
-                        .HasAnnotation("DataClassification:Label", "Prive")
+                        .HasAnnotation("DataClassification:Label", "Personal")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasAnnotation("DataClassification:InformationType", "Home Price")
+                        .HasAnnotation("DataClassification:Label", "Financial")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
                     b.Property<int>("Size")
                         .HasColumnType("int")
-                        .HasAnnotation("DataClassification:InformationType", "Home SIZE")
+                        .HasAnnotation("DataClassification:InformationType", "Home Size")
                         .HasAnnotation("DataClassification:Label", "Property")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
-
-                    b.Property<int>("YearBuilt")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -368,37 +371,35 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AccountStatus")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "User Status")
-                        .HasAnnotation("DataClassification:Label", "Internal")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
-
                     b.Property<int?>("AdminId")
                         .HasColumnType("int")
                         .HasAnnotation("DataClassification:InformationType", "Admin Reference")
                         .HasAnnotation("DataClassification:Label", "Confidential")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
                     b.Property<string>("Adress")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "Home Address")
+                        .HasAnnotation("DataClassification:Label", "Private")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("DataClassification:InformationType", "Email Address")
                         .HasAnnotation("DataClassification:Label", "Contact")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("DataClassification:InformationType", "User Full Name")
+                        .HasAnnotation("DataClassification:Label", "Personal")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastPasswordChangeUtc")
-                        .HasColumnType("datetime2")
-                        .HasAnnotation("DataClassification:InformationType", "Last Password Change")
-                        .HasAnnotation("DataClassification:Label", "Security")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
+                    b.Property<DateTime?>("LastLoginUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
@@ -407,11 +408,17 @@ namespace EFCore.DataClassification.WebApi.Migrations
                         .HasAnnotation("DataClassification:Label", "Internal")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
-                    b.Property<string>("UserName")
+                    b.Property<decimal>("Salary")
+                        .HasColumnType("decimal(18,2)")
+                        .HasAnnotation("DataClassification:InformationType", "Financial Information")
+                        .HasAnnotation("DataClassification:Label", "Confidential")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Critical);
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "User Name")
-                        .HasAnnotation("DataClassification:Label", "Personal")
+                        .HasAnnotation("DataClassification:InformationType", "User Status")
+                        .HasAnnotation("DataClassification:Label", "Internal")
                         .HasAnnotation("DataClassification:Rank", SensitivityRank.Low);
 
                     b.HasKey("Id");

@@ -1,7 +1,6 @@
 ﻿using EFCore.DataClassification.Annotations;
 using EFCore.DataClassification.Exceptions;
 using EFCore.DataClassification.Operations;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
@@ -127,13 +126,22 @@ namespace EFCore.DataClassification.Infrastructure {
 
             builder.EndCommand(); 
         }
-
         #endregion
 
         #region Extended property helpers
 
-        private void AppendExtendedProperty(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName,string propertyName,string propertyValue) {
+        private void AppendExtendedProperty(
+            MigrationCommandListBuilder builder,
+            string schemaName,
+            string tableName,
+            string columnName,
+            string propertyName,
+            string propertyValue) {
+            var helper = Dependencies.SqlGenerationHelper;
             var stringMapping = Dependencies.TypeMappingSource.GetMapping(typeof(string));
+
+            var fullName = helper.DelimitIdentifier(tableName, schemaName);
+            var fullNameLiteral = stringMapping.GenerateSqlLiteral(fullName);
 
             var nameLiteral = stringMapping.GenerateSqlLiteral(propertyName);
             var schemaLiteral = stringMapping.GenerateSqlLiteral(schemaName);
@@ -141,16 +149,30 @@ namespace EFCore.DataClassification.Infrastructure {
             var columnLiteral = stringMapping.GenerateSqlLiteral(columnName);
             var valueLiteral = stringMapping.GenerateSqlLiteral(propertyValue);
 
-            builder
-                .AppendLine(
-                    $"""
-             EXEC sys.sp_addextendedproperty
-                 @name = {nameLiteral},
-                 @value = {valueLiteral},
-                 @level0type = N'SCHEMA', @level0name = {schemaLiteral},
-                 @level1type = N'TABLE',  @level1name = {tableLiteral},
-                 @level2type = N'COLUMN', @level2name = {columnLiteral};
-             """);
+            // Add or update the extended property to avoid failures when it already exists
+            builder.AppendLine(
+            $"""
+                IF EXISTS (
+                    SELECT 1
+                    FROM sys.extended_properties ep
+                    WHERE ep.name = {nameLiteral}
+                      AND ep.major_id = OBJECT_ID({fullNameLiteral})
+                      AND ep.minor_id = COLUMNPROPERTY(OBJECT_ID({fullNameLiteral}), {columnLiteral}, 'ColumnId')
+                )
+                    EXEC sys.sp_updateextendedproperty
+                        @name = {nameLiteral},
+                        @value = {valueLiteral},
+                        @level0type = N'SCHEMA', @level0name = {schemaLiteral},
+                        @level1type = N'TABLE',  @level1name = {tableLiteral},
+                        @level2type = N'COLUMN', @level2name = {columnLiteral};
+                ELSE
+                    EXEC sys.sp_addextendedproperty
+                        @name = {nameLiteral},
+                        @value = {valueLiteral},
+                        @level0type = N'SCHEMA', @level0name = {schemaLiteral},
+                        @level1type = N'TABLE',  @level1name = {tableLiteral},
+                        @level2type = N'COLUMN', @level2name = {columnLiteral};
+            """);
         }
 
 
@@ -285,28 +307,40 @@ namespace EFCore.DataClassification.Infrastructure {
 
         #endregion
 
-        private static void ValidateDataClassification(string targetName, string? label, string? informationType, string? rank) {
-            if (string.IsNullOrWhiteSpace(label)
-                && string.IsNullOrWhiteSpace(informationType)
-                && string.IsNullOrWhiteSpace(rank)) {
-                return;
-            }
+        private static void ValidateDataClassification(string targetName,string? label,string? informationType,string? rank) {
+            
+            label = string.IsNullOrWhiteSpace(label) ? null : label.Trim();
+            informationType = string.IsNullOrWhiteSpace(informationType) ? null : informationType.Trim();
+            rank = string.IsNullOrWhiteSpace(rank) ? null : rank.Trim();
 
-            if (!string.IsNullOrWhiteSpace(rank) && !DataClassificationConstants.IsValidRank(rank)) {
+           
+            if (label is null && informationType is null && rank is null)
+                return;
+
+            
+            if (rank is not null && !DataClassificationConstants.IsValidRank(rank)) {
                 throw new DataClassificationException(
-                    $"Invalid DataClassification Rank '{rank}' on property '{targetName}'. " +
+                    $"Invalid DataClassification Rank '{rank}' on '{targetName}'. " +
                     $"Allowed values: {DataClassificationConstants.GetAllowedRanksString()}.");
             }
 
-            if (label?.Length > DataClassificationConstants.MaxLabelLength) {
+            
+            if (label is not null && label.Length > DataClassificationConstants.MaxLabelLength) {
                 throw new DataClassificationException(
                     $"DataClassification Label on '{targetName}' is too long " +
                     $"({label.Length} chars, max {DataClassificationConstants.MaxLabelLength}).");
+            }
+
+            if (informationType is not null && informationType.Length > DataClassificationConstants.MaxInformationTypeLength) {
+                throw new DataClassificationException(
+                    $"DataClassification InformationType on '{targetName}' is too long " +
+                    $"({informationType.Length} chars, max {DataClassificationConstants.MaxInformationTypeLength}).");
             }
         }
 
 
 
-        
+
+
     }
 }

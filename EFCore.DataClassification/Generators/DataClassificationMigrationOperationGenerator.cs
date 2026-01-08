@@ -23,32 +23,36 @@ namespace EFCore.DataClassification.Generators {
 
             base.Generate(operation, builder);
         }
-
         private void GenerateCreate(CreateDataClassificationOperation op, IndentedStringBuilder builder) {
-            builder
-                .AppendLine(".Operations.Add(new CreateDataClassificationOperation")
-                .AppendLine("{")
-                .IncrementIndent()
-                .AppendLine($"Schema = {Dependencies.CSharpHelper.Literal(op.Schema)},")
-                .AppendLine($"Table = {Dependencies.CSharpHelper.Literal(op.Table)},")
-                .AppendLine($"Column = {Dependencies.CSharpHelper.Literal(op.Column)},")
-                .AppendLine($"Label = {Dependencies.CSharpHelper.Literal(op.Label)},")
-                .AppendLine($"InformationType = {Dependencies.CSharpHelper.Literal(op.InformationType)},")
-                .AppendLine($"Rank = {Dependencies.CSharpHelper.Literal(op.Rank)},")
-                .DecrementIndent()
-                .AppendLine("})");
+            builder.Append(".AddDataClassification(");
+
+            builder.Append($"table: {Dependencies.CSharpHelper.Literal(op.Table)}, ");
+            builder.Append($"column: {Dependencies.CSharpHelper.Literal(op.Column)}");
+
+            if (op.Schema is not null)
+                builder.Append($", schema: {Dependencies.CSharpHelper.Literal(op.Schema)}");
+            if (op.Label is not null)
+                builder.Append($", label: {Dependencies.CSharpHelper.Literal(op.Label)}");
+            if (op.InformationType is not null)
+                builder.Append($", informationType: {Dependencies.CSharpHelper.Literal(op.InformationType)}");
+            if (op.Rank is not null)
+                builder.Append($", rank: {Dependencies.CSharpHelper.Literal(op.Rank)}");
+
+            
+            builder.Append(")");
         }
 
         private void GenerateRemove(RemoveDataClassificationOperation op, IndentedStringBuilder builder) {
-            builder
-                .AppendLine(".Operations.Add(new RemoveDataClassificationOperation")
-                .AppendLine("{")
-                .IncrementIndent()
-                .AppendLine($"Schema = {Dependencies.CSharpHelper.Literal(op.Schema)},")
-                .AppendLine($"Table = {Dependencies.CSharpHelper.Literal(op.Table)},")
-                .AppendLine($"Column = {Dependencies.CSharpHelper.Literal(op.Column)}")
-                .DecrementIndent()
-                .AppendLine("})"); 
+            builder.Append(".DropDataClassification(");
+
+            builder.Append($"table: {Dependencies.CSharpHelper.Literal(op.Table)}, ");
+            builder.Append($"column: {Dependencies.CSharpHelper.Literal(op.Column)}");
+
+            if (op.Schema is not null)
+                builder.Append($", schema: {Dependencies.CSharpHelper.Literal(op.Schema)}");
+
+            builder.Append(")");
         }
+
     }
 }
