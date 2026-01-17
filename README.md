@@ -1,18 +1,89 @@
-### EFCore.DataClassification
+# EFCore.DataClassification
+
+A lightweight Entity Framework Core 8 extension that seamlessly integrates SQL Server data classification (sensitivity labels) into your migration pipeline.
+
+## 🚀 Quick Start - Get Started in 5 Minutes
+
+**"How do I add this to my project?"** Follow these quick steps:
+
+### 1. Add Project Reference
+
+```bash
+# Add the project to your solution
+dotnet sln add EFCore.DataClassification/EFCore.DataClassification.csproj
+
+# Add reference to your Web/API project
+dotnet add reference ../EFCore.DataClassification/EFCore.DataClassification.csproj
+```
+
+### 2. Configure DbContext (Program.cs or Startup.cs)
+
+```csharp
+using EFCore.DataClassification.Extensions;
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options
+        .UseSqlServer(connectionString)
+        .UseDataClassificationSqlServer(); // Add this line
+});
+```
+
+### 3. Enable Classification Scanning
+
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+    modelBuilder.UseDataClassification(); // Add this line
+}
+```
+
+### 4. Add Attributes to Your Entities
+
+```csharp
+using EFCore.DataClassification.Attributes;
+using EFCore.DataClassification.Models;
+
+public class Customer
+{
+    public int Id { get; set; }
+    
+    [DataClassification("Contact", "Email Address", SensitivityRank.High)]
+    public string? Email { get; set; }
+    
+    [DataClassification("Contact", "Phone Number", SensitivityRank.High)]
+    public string? PhoneNumber { get; set; }
+}
+```
+
+> **Note:** The attribute parameters are: `(label, informationType, rank)`. Valid ranks: `None`, `Low`, `Medium`, `High`, `Critical`.
+
+### 5. Create and Apply Migration
+
+```bash
+dotnet ef migrations add AddDataClassification
+dotnet ef database update
+```
+
+**That's it!** 🎉 SQL Server sensitivity classification metadata is now automatically generated.
+
+**See the `WebApi` project for more examples.**
+
+---
 
 ## Overview
 
-**EFCore.DataClassification** is a small extension library for **Entity Framework Core 8 (EF Core 8)** that adds **SQL Server data classification** support on top of the standard migrations pipeline.
+**EFCore.DataClassification** is a production-ready extension library for **Entity Framework Core 8** that seamlessly integrates **SQL Server data classification** (sensitivity labels) into your migration pipeline. It enables automatic generation and synchronization of sensitivity classification metadata alongside your database schema changes.
 
-It lets you:
+### Key Features
 
-- **Annotate properties** in your entity classes with a `[DataClassification]` attribute.
-- Or configure classification via **Fluent API** (`HasDataClassification`).
-- Automatically **generate SQL Server metadata** for:
-  - `ADD SENSITIVITY CLASSIFICATION` (native SQL Server feature),
-  - and `sp_addextendedproperty` / `sp_dropextendedproperty` calls for label, information type and rank.
-- Keep the classification metadata **in sync with EF Core migrations** (add, remove, or change columns → classification migrations are generated accordingly).
-- Validate **rank values and label lengths** at migration time with clear error messages.
+- **Declarative Configuration**: Annotate entity properties with `[DataClassification]` attributes or use Fluent API (`HasDataClassification`)
+- **Automatic SQL Generation**: Generates both native SQL Server sensitivity classification (`ADD SENSITIVITY CLASSIFICATION`) and extended properties for comprehensive metadata storage
+- **Migration-Aware**: Classification metadata automatically syncs with EF Core migrations—add, remove, or modify columns, and classification operations are generated accordingly
+- **Version Compatibility**: Automatically detects SQL Server version and adapts behavior (full support for SQL Server 2019+, extended properties only for SQL Server 2017)
+- **Validation**: Built-in validation for rank values and label lengths with clear, actionable error messages
+- **Zero Configuration**: Works out of the box with minimal setup—just add the extension and enable scanning
 
 The solution also includes:
 
