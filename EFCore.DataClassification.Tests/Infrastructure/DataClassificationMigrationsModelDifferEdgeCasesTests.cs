@@ -170,11 +170,16 @@ public class DataClassificationMigrationsModelDifferEdgeCasesTests {
         // Act
         var ops = differ.GetDifferences(sourceRel, targetRel).ToList();
 
-        // Current implementation does not emit Remove ops on DropTable.
-        // Ensure DropTable exists and no classification ops.
+        // withoutdiffer approach emits Remove ops before DropTable
         var drop = Assert.Single(ops.OfType<DropTableOperation>());
         Assert.Equal("Logs", drop.Name);
-        Assert.DoesNotContain(ops, o => o is RemoveDataClassificationOperation);
+
+        var remove = Assert.Single(ops.OfType<RemoveDataClassificationOperation>());
+        Assert.Equal("Logs", remove.Table);
+        Assert.Equal("Message", remove.Column);
+
+        Assert.True(ops.IndexOf(remove) < ops.IndexOf(drop),
+            "RemoveDataClassification must come before DropTable.");
     }
 
     #endregion

@@ -7,9 +7,10 @@ namespace EFCore.DataClassification.WebApi.Models {
         
    
        public  int Age { get; set; }
-        public string Email { get; set; } = string.Empty;
+        [DataClassification("Contact", "Admin Email", SensitivityRank.Medium)]
+        public string? Email { get; set; }
         
-        [DataClassification("Highly Confidential", "Admin Sleutel", SensitivityRank.Critical)]
+        [DataClassification("Confidential", "Admin Key", SensitivityRank.High)]
         public int Adminkey { get; set; }
 
         public ICollection<User> Users { get; set; } = new List<User>();

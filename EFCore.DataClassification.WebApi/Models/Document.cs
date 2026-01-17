@@ -10,19 +10,14 @@ namespace EFCore.DataClassification.WebApi.Models {
         public string Title { get; set; } = string.Empty;
 
         // CASE: normal (Rank var)
-        [DataClassification("Docs", "Body", SensitivityRank.Medium)]
+        [DataClassification("Docs", "Body", SensitivityRank.High)]
         public string Body { get; set; } = string.Empty;
 
-        [DataClassification("Docs", "Yazar", SensitivityRank.Medium)]
-        public string Author { get; set; } = string.Empty;
-
         // CASE: başlangıçta classif. yok → sonradan ekleme testi için
-        [DataClassification("Docs", "Summary", SensitivityRank.Low)]
         public string? Summary { get; set; }
 
-        // CASE: opsiyonel bir “daha hassas” alan (sonradan kaldırma/değiştirme için)
-        [DataClassification("Docs", "InternalRef", SensitivityRank.High)]
-        public string? InternalRef { get; set; }
+        [DataClassification("Docs", "Reviewer", SensitivityRank.Low)]
+        public string? Reviewer { get; set; }
 
         public DateTime CreatedAt {
             get; set;

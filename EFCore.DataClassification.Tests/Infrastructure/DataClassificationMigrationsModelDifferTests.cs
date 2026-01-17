@@ -36,6 +36,6 @@ public class DataClassificationMigrationsModelDifferTests
 
         // Assert
         Assert.NotNull(differ);
-        Assert.IsType<DataClassificationMigrationsModelDiffer>(differ);
+        Assert.IsType<MigrationsModelDifferDecorator>(differ);
     }
 }

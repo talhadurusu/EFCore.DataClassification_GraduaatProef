@@ -5,6 +5,7 @@ using EFCore.DataClassification.WebApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,9 +13,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCore.DataClassification.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260117210034_SmokeTest_AllEdgeCases_WithoutDiffer")]
+    partial class SmokeTest_AllEdgeCases_WithoutDiffer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -322,9 +325,9 @@ namespace EFCore.DataClassification.WebApi.Migrations
 
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("DataClassification:InformationType", "User Email")
-                        .HasAnnotation("DataClassification:Label", "Confidential")
-                        .HasAnnotation("DataClassification:Rank", SensitivityRank.Medium);
+                        .HasAnnotation("DataClassification:InformationType", "Email Address")
+                        .HasAnnotation("DataClassification:Label", "Contact")
+                        .HasAnnotation("DataClassification:Rank", SensitivityRank.High);
 
                     b.Property<DateTime?>("LastPasswordChangeUtc")
                         .HasColumnType("datetime2")
