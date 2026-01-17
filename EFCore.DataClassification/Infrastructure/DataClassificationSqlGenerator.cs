@@ -23,6 +23,9 @@ namespace EFCore.DataClassification.Infrastructure {
         }
         #endregion
 
+        /// <summary>
+        /// Generates SQL for data classification operations.
+        /// </summary>
         protected override void Generate(MigrationOperation operation,IModel? model,MigrationCommandListBuilder builder) {
 
             switch (operation) {
@@ -49,8 +52,6 @@ namespace EFCore.DataClassification.Infrastructure {
             base.Generate(operation, model, builder);
         }
 
-      
-
         #region Orchestrator helpers (Write / Clear)
 
         /// <summary>
@@ -71,13 +72,14 @@ namespace EFCore.DataClassification.Infrastructure {
             var schemaName = schema ?? DataClassificationConstants.DefaultSchema;
             var targetName = $"{schemaName}.{table}.{column}";
 
-            // Validate before processing
             ValidateDataClassification(targetName, label, informationType, rank);
 
-            // Delegate to core implementation
             WriteDataClassificationCore(builder, schemaName, table, column, label, informationType, rank);
         }
 
+        /// <summary>
+        /// Removes all classification metadata (extended properties and sensitivity classification) from a column.
+        /// </summary>
         private void ClearDataClassification(MigrationCommandListBuilder builder, string schemaName, string tableName, string columnName) {
 
             AppendDropExtendedProperty(builder, schemaName, tableName, columnName, DataClassificationConstants.Label);
@@ -130,6 +132,9 @@ namespace EFCore.DataClassification.Infrastructure {
 
         #region Extended property helpers
 
+        /// <summary>
+        /// Adds or updates an extended property. Uses IF EXISTS to update if present, otherwise adds it.
+        /// </summary>
         private void AppendExtendedProperty(
             MigrationCommandListBuilder builder,
             string schemaName,
@@ -149,7 +154,6 @@ namespace EFCore.DataClassification.Infrastructure {
             var columnLiteral = stringMapping.GenerateSqlLiteral(columnName);
             var valueLiteral = stringMapping.GenerateSqlLiteral(propertyValue);
 
-            // Add or update the extended property to avoid failures when it already exists
             builder.AppendLine(
             $"""
                 IF EXISTS (
@@ -176,6 +180,9 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
 
+        /// <summary>
+        /// Drops an extended property if it exists.
+        /// </summary>
         private void AppendDropExtendedProperty(MigrationCommandListBuilder builder,string schemaName,string tableName,string columnName,string propertyName) {
 
             var helper = Dependencies.SqlGenerationHelper;
@@ -210,7 +217,9 @@ namespace EFCore.DataClassification.Infrastructure {
 
         #region Sensitivity classification helpers
 
-
+        /// <summary>
+        /// Drops SQL Server sensitivity classification. Only runs on SQL Server 2019+ (version 15+).
+        /// </summary>
         private void AppendDropSensitivityClassification(
             MigrationCommandListBuilder builder,
             string schemaName,
@@ -223,7 +232,6 @@ namespace EFCore.DataClassification.Infrastructure {
             var delimitedColumn = helper.DelimitIdentifier(columnName);
             var objectName = $"{schemaName}.{tableName}";
             
-            // Properly escape objectName and columnName for use in string literals to prevent SQL injection
             var objectNameLiteral = stringMapping.GenerateSqlLiteral(objectName);
             var columnNameLiteral = stringMapping.GenerateSqlLiteral(columnName);
 
@@ -253,6 +261,10 @@ namespace EFCore.DataClassification.Infrastructure {
 
 
 
+        /// <summary>
+        /// Adds SQL Server sensitivity classification. Converts C# rank enum to SQL keywords (LOW, MEDIUM, etc).
+        /// Only runs on SQL Server 2019+ (version 15+).
+        /// </summary>
         private void AppendSensitivityClassification(MigrationCommandListBuilder builder, string schemaName, string tableName, string columnName, string? label, string? informationType, string? rankString) {
             if (string.IsNullOrWhiteSpace(label)
                 && string.IsNullOrWhiteSpace(informationType)
@@ -309,24 +321,23 @@ namespace EFCore.DataClassification.Infrastructure {
 
         #endregion
 
+        /// <summary>
+        /// Validates classification parameters: rank must be valid, label and informationType must not exceed max length.
+        /// </summary>
         private static void ValidateDataClassification(string targetName,string? label,string? informationType,string? rank) {
-            
             label = string.IsNullOrWhiteSpace(label) ? null : label.Trim();
             informationType = string.IsNullOrWhiteSpace(informationType) ? null : informationType.Trim();
             rank = string.IsNullOrWhiteSpace(rank) ? null : rank.Trim();
 
-           
             if (label is null && informationType is null && rank is null)
                 return;
 
-            
             if (rank is not null && !DataClassificationConstants.IsValidRank(rank)) {
                 throw new DataClassificationException(
                     $"Invalid DataClassification Rank '{rank}' on '{targetName}'. " +
                     $"Allowed values: {DataClassificationConstants.GetAllowedRanksString()}.");
             }
 
-            
             if (label is not null && label.Length > DataClassificationConstants.MaxLabelLength) {
                 throw new DataClassificationException(
                     $"DataClassification Label on '{targetName}' is too long " +

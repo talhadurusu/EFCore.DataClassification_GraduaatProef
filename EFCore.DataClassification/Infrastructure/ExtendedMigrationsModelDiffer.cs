@@ -46,10 +46,12 @@ namespace EFCore.DataClassification.Infrastructure {
             return ops;
         }
 
+        /// <summary>
+        /// Handles table-level diffs. Tracks renamed columns to avoid duplicate classification operations.
+        /// </summary>
         protected override IEnumerable<MigrationOperation> Diff(ITable source, ITable target, DiffContext diffContext) {
             var ops = base.Diff(source, target, diffContext).ToList();
 
-            // Check if there are any RenameColumnOperations - if so, those columns are handled in Diff(IColumn)
             var renameOps = ops.OfType<RenameColumnOperation>().ToList();
             HashSet<string>? renamedOldNames = null;
             HashSet<string>? renamedNewNames = null;
@@ -62,24 +64,20 @@ namespace EFCore.DataClassification.Infrastructure {
             var sourceByName = source.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
             var targetByName = target.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
 
-            // Added columns (but not renamed ones - those are handled in Diff(IColumn))
             foreach (var (name, targetColumn) in targetByName) {
                 if (sourceByName.ContainsKey(name))
                     continue;
                 
-                // Skip if this is a renamed column
                 if (renamedNewNames?.Contains(name) == true)
                     continue;
 
                 AddCreateOperationIfNeeded(ops, targetColumn);
             }
 
-            // Removed columns (but not renamed ones - those are handled in Diff(IColumn))
             foreach (var (name, sourceColumn) in sourceByName) {
                 if (targetByName.ContainsKey(name))
                     continue;
                 
-                // Skip if this is a renamed column
                 if (renamedOldNames?.Contains(name) == true)
                     continue;
 
@@ -89,6 +87,9 @@ namespace EFCore.DataClassification.Infrastructure {
             return ops;
         }
 
+        /// <summary>
+        /// Handles column-level diffs. Detects classification changes, additions, removals, and column renames.
+        /// </summary>
         protected override IEnumerable<MigrationOperation> Diff(IColumn source, IColumn target, DiffContext diffContext) {
             var ops = base.Diff(source, target, diffContext).ToList();
 
@@ -101,26 +102,21 @@ namespace EFCore.DataClassification.Infrastructure {
             var sourceHasClassification = sourceProperty is not null && HasClassification(sourceProperty);
             var targetHasClassification = targetProperty is not null && HasClassification(targetProperty);
 
-            // Column renamed? (compute early so earlier branches can use it)
             var isRenamed = !string.Equals(source.Name, target.Name, StringComparison.OrdinalIgnoreCase);
 
-            // Mapping removed
             if (sourceProperty is not null && targetProperty is null) {
                 if (sourceHasClassification)
                     ops.Add(GenerateRemoveOperation(source));
                 return ops;
             }
 
-            // Mapping added
             if (sourceProperty is null && targetProperty is not null) {
                 if (targetHasClassification)
                     ops.Add(GenerateCreateOperation(target, targetProperty));
                 return ops;
             }
 
-            // Both mapped
             if (sourceHasClassification && !targetHasClassification) {
-                // If renamed, remove must target the OLD column name (source)
                 ops.Add(GenerateRemoveOperation(isRenamed ? source : target));
                 return ops;
             }
@@ -132,11 +128,9 @@ namespace EFCore.DataClassification.Infrastructure {
 
             if (sourceHasClassification && targetHasClassification) {
                 if (isRenamed) {
-                    // Column renamed: remove from old name, add to new name
                     ops.Add(GenerateRemoveOperation(source));
                     ops.Add(GenerateCreateOperation(target, targetProperty!));
                 } else if (HasDataClassificationChanged(sourceProperty!, targetProperty!)) {
-                    // Classification changed but column name same
                     ops.Add(GenerateRemoveOperation(target));
                     ops.Add(GenerateCreateOperation(target, targetProperty!));
                 }
@@ -145,18 +139,15 @@ namespace EFCore.DataClassification.Infrastructure {
             return ops;
         }
 
+        /// <summary>
+        /// Ensures classification operations run in correct order: remove before column changes, create after.
+        /// </summary>
         protected override IReadOnlyList<MigrationOperation> Sort(IEnumerable<MigrationOperation> operations, DiffContext diffContext) {
             var sorted = base.Sort(operations, diffContext).ToList();
-
-            // Strategy: For each column operation (Drop/Rename/Alter), ensure:
-            // 1. RemoveDataClassification comes BEFORE the column operation
-            // 2. CreateDataClassification comes AFTER the column operation
-            // This maintains SQL execution order: DROP SENSITIVITY → ALTER COLUMN → ADD SENSITIVITY
 
             for (var i = 0; i < sorted.Count; i++) {
                 var columnOp = sorted[i];
                 
-                // Identify column operations that need classification ordering
                 var (schema, table, oldColumn, newColumn) = columnOp switch {
                     DropColumnOperation drop => (drop.Schema, drop.Table, drop.Name, (string?)null),
                     RenameColumnOperation rename => (rename.Schema, rename.Table, rename.Name, rename.NewName),
@@ -167,11 +158,8 @@ namespace EFCore.DataClassification.Infrastructure {
                 if (table == null || oldColumn == null)
                     continue;
 
-                // Step 1: Move RemoveDataClassification BEFORE the column operation
                 MoveRemoveOperationBefore(sorted, ref i, schema, table, oldColumn);
 
-                // Step 2: Move CreateDataClassification AFTER the column operation
-                // For rename, use the new column name; otherwise use the old column name
                 var targetColumn = newColumn ?? oldColumn;
                 MoveCreateOperationAfter(sorted, i, schema, table, targetColumn);
             }
@@ -180,7 +168,7 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
         /// <summary>
-        /// Moves RemoveDataClassificationOperation before the target index if it exists after it.
+        /// Moves remove classification operation before column operations (drop/rename/alter).
         /// </summary>
         private static void MoveRemoveOperationBefore(List<MigrationOperation> sorted, ref int targetIdx, string? schema, string table, string column) {
             var removeIdx = sorted.FindIndex(op =>
@@ -198,7 +186,7 @@ namespace EFCore.DataClassification.Infrastructure {
         }
 
         /// <summary>
-        /// Moves CreateDataClassificationOperation after the target index if it exists before or at it.
+        /// Moves create classification operation after column operations (drop/rename/alter).
         /// </summary>
         private static void MoveCreateOperationAfter(List<MigrationOperation> sorted, int targetIdx, string? schema, string table, string column) {
             var createIdx = sorted.FindIndex(op =>
@@ -253,6 +241,9 @@ namespace EFCore.DataClassification.Infrastructure {
         private static IProperty? GetMappedProperty(IColumn column)
             => column.PropertyMappings.FirstOrDefault()?.Property;
 
+        /// <summary>
+        /// Checks if a property has any classification metadata (label, informationType, or rank).
+        /// </summary>
         private static bool HasClassification(IProperty property) {
             var label = GetAnnotation(property, DataClassificationConstants.Label);
             var infoType = GetAnnotation(property, DataClassificationConstants.InformationType);
@@ -284,11 +275,17 @@ namespace EFCore.DataClassification.Infrastructure {
             => property.FindAnnotation(key)?.Value?.ToString();
 
 
+        /// <summary>
+        /// Checks if any classification annotation (label, informationType, rank) changed between source and target.
+        /// </summary>
         private static bool HasDataClassificationChanged(IProperty sourceProp, IProperty targetProp)
             => HasAnnotationChanged(sourceProp, targetProp, DataClassificationConstants.Label)
                || HasAnnotationChanged(sourceProp, targetProp, DataClassificationConstants.InformationType)
                || HasAnnotationChanged(sourceProp, targetProp, DataClassificationConstants.Rank);
 
+        /// <summary>
+        /// Compares annotation values between two properties.
+        /// </summary>
         private static bool HasAnnotationChanged(IProperty source, IProperty target, string annotationKey) {
             var sourceValue = source.FindAnnotation(annotationKey)?.Value?.ToString() ?? string.Empty;
             var targetValue = target.FindAnnotation(annotationKey)?.Value?.ToString() ?? string.Empty;

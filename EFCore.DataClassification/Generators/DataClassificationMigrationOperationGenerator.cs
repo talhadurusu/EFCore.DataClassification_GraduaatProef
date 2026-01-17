@@ -38,7 +38,6 @@ namespace EFCore.DataClassification.Generators {
             if (op.Rank is not null)
                 builder.Append($", rank: {Dependencies.CSharpHelper.Literal(op.Rank)}");
 
-            
             builder.Append(")");
         }
 

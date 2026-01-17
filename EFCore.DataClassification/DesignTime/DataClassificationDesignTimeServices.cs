@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 namespace EFCore.DataClassification.DesignTime {
     public class DataClassificationDesignTimeServices : IDesignTimeServices {
         public void ConfigureDesignTimeServices(IServiceCollection serviceCollection) {
-            //Debugger.Launch();
             serviceCollection.AddSingleton<IMigrationsCodeGenerator, DataClassificationMigrationsGenerator>();
             serviceCollection.AddSingleton<ICSharpMigrationOperationGenerator, DataClassificationMigrationOperationGenerator>();
         }

@@ -30,7 +30,7 @@ The solution also includes:
   - xUnit tests for attributes, extensions, SQL generator, and migration model differ.
 - **`EFCore.DataClassification.WebApi`**
   - Example ASP.NET Core 8 Web API application.
-  - Uses SQL Server + this library to demonstrate classification on a `User` and other sample entities.
+  - Uses SQL Server + this library to demonstrate classification on various sample entities (User, Admin, Customer, Game, Car, Bike, Home, Document).
 
 ---
 
@@ -369,7 +369,6 @@ The `EFCore.DataClassification.WebApi` project demonstrates an ASP.NET Core Web 
 
   - Configures `AppDbContext` with `.UseDataClassificationSqlServer()`.
   - Registers a global exception handler (`GlobalExceptionHandler`).
-  - Adds AutoMapper with `UserMappingProfile`.
   - Enables Swagger/OpenAPI.
 
 - **`AppDbContext`**
@@ -385,10 +384,12 @@ The `EFCore.DataClassification.WebApi` project demonstrates an ASP.NET Core Web 
 
 - **Controllers**
 
-  - `UsersController`:
-    - Basic CRUD endpoints (`GET`, `POST`, `PUT`, `DELETE`).
-    - Additional queries (search, filter by admin).
-    - Uses DTOs and AutoMapper (`UserDtos`, `UserMappingProfile`).
+  - `DataClassificationController`:
+    - Query classification metadata from SQL Server (`GET /api/DataClassification/metadata`).
+    - Export metadata as CSV or JSON (`GET /api/DataClassification/metadata/export/csv`, `/export/json`).
+    - Filter by rank, information type, or table name.
+    - Get classification summary statistics.
+    - Query extended properties as fallback.
 
 - **Middleware**
 
@@ -415,9 +416,11 @@ The `EFCore.DataClassification.WebApi` project demonstrates an ASP.NET Core Web 
    dotnet run --project EFCore.DataClassification.WebApi
    ```
 4. Open Swagger UI (usually at `https://localhost:{port}/swagger`) and test endpoints like:
-   - `GET /api/users`
-   - `POST /api/users`
-   - `GET /api/users/search?query=...`
+   - `GET /api/DataClassification/metadata` - Get all classification metadata
+   - `GET /api/DataClassification/metadata/export/csv` - Export as CSV
+   - `GET /api/DataClassification/metadata/export/json` - Export as JSON
+   - `GET /api/DataClassification/metadata/by-rank/{rank}` - Filter by sensitivity rank
+   - `GET /api/DataClassification/metadata/summary` - Get summary statistics
 
 ---
 

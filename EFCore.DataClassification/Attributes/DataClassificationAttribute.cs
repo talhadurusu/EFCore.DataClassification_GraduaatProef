@@ -13,7 +13,6 @@ namespace EFCore.DataClassification.Attributes {
         public string InformationType { get; }  
         public SensitivityRank Rank { get; }    
 
-        
         public DataClassificationAttribute(string label, string informationType, SensitivityRank rank) {
             Label = label;
             InformationType = informationType;

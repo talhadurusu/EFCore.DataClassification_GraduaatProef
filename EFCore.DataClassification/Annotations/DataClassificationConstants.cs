@@ -10,11 +10,6 @@ namespace EFCore.DataClassification.Annotations {
     /// Ensures consistent values across the application.
     /// </summary>
     public static class DataClassificationConstants {
-        
-        // ========================================
-        // ANNOTATION NAMES
-        // ========================================
-        
         public const string AnnotationPrefix = "DataClassification:";
         
         public const string Label = AnnotationPrefix + "Label";
@@ -29,9 +24,7 @@ namespace EFCore.DataClassification.Annotations {
         public const int MaxInformationTypeLength = 128;
         
         public const string DefaultSchema = "dbo";
-        
 
-       
         /// <summary>
         /// Valid sensitivity rank values (maps to SQL Server sensitivity classification ranks)
         /// </summary>

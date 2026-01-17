@@ -1,8 +1,6 @@
 using EFCore.DataClassification.Extensions;
 using EFCore.DataClassification.WebApi.Middleware;
 using Microsoft.EntityFrameworkCore;
-using AutoMapper;
-using EFCore.DataClassification.WebApi.Mappings;
 
 namespace EFCore.DataClassification.WebApi {
     public class Program {
@@ -22,11 +20,6 @@ namespace EFCore.DataClassification.WebApi {
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
             builder.Services.AddProblemDetails();
 
-         
-            builder.Services.AddAutoMapper(cfg =>
-            {
-                cfg.AddProfile<UserMappingProfile>(); 
-            });
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
