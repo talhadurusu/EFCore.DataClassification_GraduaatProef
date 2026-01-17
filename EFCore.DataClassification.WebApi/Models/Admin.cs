@@ -8,18 +8,18 @@ namespace EFCore.DataClassification.WebApi.Models {
         [DataClassification("Confidential", "Admin First Name", SensitivityRank.High)]
         public string FirstName { get; set; } = string.Empty;
 
-        [DataClassification("Confidential", "Admin Last Name", SensitivityRank.High)]
+        [DataClassification("Confidential", "Admin Last Name", SensitivityRank.Medium)]
         public string LastName { get; set; } = string.Empty;
 
         [DataClassification("Confidential", "Admin Email", SensitivityRank.High)]
         public string? Email { get; set; }
 
+        [DataClassification("Contact", "Admin Phone", SensitivityRank.Medium)]
         public string PhoneNo { get; set; } = string.Empty;
 
         [DataClassification("Confidential", "Admin Inscription Number", SensitivityRank.Medium)]
         public string InscriptionNumber { get; set; } = string.Empty;
 
-        [DataClassification("Internal", "Favorite Author", SensitivityRank.Low)]
         public string FavoriteBookAuthor { get; set; } = string.Empty;
 
         [DataClassification("Internal", "Admin Notes", SensitivityRank.Low)]

@@ -23,11 +23,13 @@ namespace EFCore.DataClassification.Infrastructure {
         public DataClassificationMigrationsModelDiffer(
             IRelationalTypeMappingSource typeMappingSource,
             IMigrationsAnnotationProvider migrationsAnnotationProvider,
+            IRelationalAnnotationProvider relationalAnnotationProvider,
             IRowIdentityMapFactory rowIdentityMapFactory,
             CommandBatchPreparerDependencies commandBatchPreparerDependencies)
             : base(
                 typeMappingSource,
                 migrationsAnnotationProvider,
+                relationalAnnotationProvider,
                 rowIdentityMapFactory,
                 commandBatchPreparerDependencies) {
         }

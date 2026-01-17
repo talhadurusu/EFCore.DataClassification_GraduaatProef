@@ -6,12 +6,12 @@ namespace EFCore.DataClassification.WebApi.Models {
 
         public int Id { get; set; }
 
-        [DataClassification("Personal", "User Name", SensitivityRank.Low)]
         public string UserName { get; set; } = string.Empty;
 
+        [DataClassification("Location", "Home Address", SensitivityRank.Low)]
         public string Adress { get; set; } = string.Empty;
 
-        [DataClassification("Contact", "Email Address", SensitivityRank.Medium)]
+        [DataClassification("Contact", "Email Address", SensitivityRank.High)]
         public string? Email { get; set; }
 
         public string PhoneNumber { get; set; } = string.Empty;
@@ -22,7 +22,7 @@ namespace EFCore.DataClassification.WebApi.Models {
         public ICollection<Game> Games { get; set; } = new List<Game>();
 
         [DataClassification("Confidential", "Admin Reference", SensitivityRank.Critical)]
-        public int? AdminId { get; set; }
+        public int AdminId { get; set; }
         
         public Admin? Admin { get; set; }
 

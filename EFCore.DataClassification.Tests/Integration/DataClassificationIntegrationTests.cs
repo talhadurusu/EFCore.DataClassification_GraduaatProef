@@ -142,12 +142,14 @@ namespace EFCore.DataClassification.Tests.Integration {
 
             var typeMappingSource = sp.GetRequiredService<IRelationalTypeMappingSource>();
             var migrationsAnnotationProvider = sp.GetRequiredService<IMigrationsAnnotationProvider>();
+            var relationalAnnotationProvider = sp.GetRequiredService<IRelationalAnnotationProvider>();
             var rowIdentityMapFactory = sp.GetRequiredService<IRowIdentityMapFactory>();
             var commandBatchDeps = sp.GetRequiredService<CommandBatchPreparerDependencies>();
 
             return new DataClassificationMigrationsModelDiffer(
                 typeMappingSource,
                 migrationsAnnotationProvider,
+                relationalAnnotationProvider,
                 rowIdentityMapFactory,
                 commandBatchDeps);
         }

@@ -22,7 +22,7 @@ namespace EFCore.DataClassification.WebApi.Models {
         public string OwnerName { get; set; } = string.Empty;
 
         [DataClassification("Confidential", "Car Owner Email", SensitivityRank.High)]
-        public string? OwnerEmail { get; set; }
+        public string OwnerEmail { get; set; } = string.Empty;
 
         public string ColorPreference { get; set; } = string.Empty;
 

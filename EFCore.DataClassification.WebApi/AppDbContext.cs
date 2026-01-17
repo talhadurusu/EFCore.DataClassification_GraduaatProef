@@ -17,6 +17,9 @@ public class AppDbContext : DbContext {
     public DbSet<Home> Homes { get; set; }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Document> Documents { get; set; }
+    public DbSet<PersonBase> People { get; set; }
+    public DbSet<Employee> Employees { get; set; }
+    public DbSet<Contractor> Contractors { get; set; }
 
 
 
@@ -30,5 +33,40 @@ public class AppDbContext : DbContext {
         modelBuilder.Entity<User>()
             .Property(u => u.PhoneNumber)
             .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);
+
+        modelBuilder.Entity<User>()
+            .Property<string>("ShadowSecret")
+            .HasDataClassification("Security", "Shadow Secret", SensitivityRank.High);
+
+        modelBuilder.Entity<User>()
+            .Property(u => u.AccountStatus)
+            .HasColumnName("Status");
+
+        modelBuilder.Entity<Admin>()
+            .Property(a => a.InscriptionNumber)
+            .HasColumnName("RegistrationNumber");
+
+        modelBuilder.Entity<Home>()
+            .Property(h => h.Price)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<PersonBase>()
+            .ToTable("People");
+
+        modelBuilder.Entity<Employee>()
+            .ToTable("Employees");
+
+        modelBuilder.Entity<Contractor>()
+            .ToTable("Contractors");
+
+        modelBuilder.Entity<Employee>()
+            .Property(e => e.Salary)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<PersonBase>()
+            .OwnsOne(p => p.Contact, owned => {
+                owned.Property(p => p.Email).HasColumnName("ContactEmail");
+                owned.Property(p => p.Phone).HasColumnName("ContactPhone");
+            });
     }
 }

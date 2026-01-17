@@ -6,6 +6,7 @@ namespace EFCore.DataClassification.WebApi.Models {
     public class Bike {
         public int Id { get; set; }
 
+        [DataClassification("Public", "Bike Brand", SensitivityRank.Low)]
         public string Brand { get; set; } = string.Empty;
         
         public string Type { get; set; } = string.Empty;

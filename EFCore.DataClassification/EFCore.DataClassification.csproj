@@ -9,7 +9,7 @@
     <PackageId>EFCore.DataClassification</PackageId>
     <Version>1.1.0</Version>
     <Authors>Talha Durusu</Authors>
-    <Description>Entity Framework Core 8 extension library for SQL Server data classification support. Automatically generates SQL Server sensitivity classification metadata and extended properties through migrations.</Description>
+    <Description>Entity Framework Core 9 extension library for SQL Server data classification support. Automatically generates SQL Server sensitivity classification metadata and extended properties through migrations.</Description>
     <PackageTags>EntityFrameworkCore;EFCore;EF;SQLServer;DataClassification;Sensitivity;Migrations;Security</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     
@@ -24,11 +24,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.22">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.22" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.22" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.2" />
   </ItemGroup>
 
   <!-- Include README.md in the package -->
