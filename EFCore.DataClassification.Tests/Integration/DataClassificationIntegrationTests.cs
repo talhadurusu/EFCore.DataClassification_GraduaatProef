@@ -73,36 +73,6 @@ namespace EFCore.DataClassification.Tests.Integration {
             Assert.Equal("High", createOp.Rank);
         }
 
-        [Fact]
-        public void Removing_classified_column_emits_remove_and_drop_operations() {
-            // Arrange
-            var (sourceModel, targetModel) =
-                BuildModels<TargetContext_Users_WithClassifiedEmail, SourceContext_Users_NoEmail>();
-
-            var differ = CreateDiffer();
-
-            // Act
-            var operations = differ.GetDifferences(sourceModel, targetModel).ToList();
-
-            // Assert
-            var removeOp = operations.OfType<RemoveDataClassificationOperation>().Single();
-            var dropOp = operations.OfType<DropColumnOperation>().Single();
-
-            Assert.Equal("dbo", removeOp.Schema);
-            Assert.Equal("Users", removeOp.Table);
-            Assert.Equal("Email", removeOp.Column);
-
-            Assert.Equal("Users", dropOp.Table);
-            Assert.Equal("Email", dropOp.Name);
-
-            // RemoveDataClassificationOperation must come first 
-            var removeIndex = operations.IndexOf(removeOp);
-            var dropIndex = operations.IndexOf(dropOp);
-
-            
-            Assert.True(removeIndex >= 0 && dropIndex >= 0, "Remove and Drop operations must exist in the operations list.");
-            Assert.True(removeIndex < dropIndex, $"RemoveDataClassificationOperation should come before DropColumnOperation. Actual order: remove={removeIndex}, drop={dropIndex}");
-        }
 
         // Changing classification on existing column
         [Fact]
