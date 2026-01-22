@@ -72,6 +72,10 @@ namespace EFCore.DataClassification.Infrastructure {
             var schemaName = schema ?? DataClassificationConstants.DefaultSchema;
             var targetName = $"{schemaName}.{table}.{column}";
 
+            label = string.IsNullOrWhiteSpace(label) ? null : label.Trim();
+            informationType = string.IsNullOrWhiteSpace(informationType) ? null : informationType.Trim();
+            rank = string.IsNullOrWhiteSpace(rank) ? null : rank.Trim();
+
             ValidateDataClassification(targetName, label, informationType, rank);
 
             WriteDataClassificationCore(builder, schemaName, table, column, label, informationType, rank);
@@ -272,17 +276,22 @@ namespace EFCore.DataClassification.Infrastructure {
                 return;
 
             string? sqlRank = null;
+
             if (!string.IsNullOrWhiteSpace(rankString)) {
-                sqlRank = rankString switch {
-                    "Low" => "LOW",
-                    "Medium" => "MEDIUM",
-                    "High" => "HIGH",
-                    "Critical" => "CRITICAL",
-                    _ => throw new DataClassificationException(
-                        $"Invalid DataClassification Rank '{rankString}' on '{schemaName}.{tableName}.{columnName}'. " +
-                        $"Allowed values: {DataClassificationConstants.GetAllowedRanksString()}.")
-                };
+                var normalized = rankString.Trim();
+                if (!string.Equals(normalized, "None", StringComparison.OrdinalIgnoreCase)) {
+                    sqlRank = normalized.ToUpperInvariant() switch {
+                        "LOW" => "LOW",
+                        "MEDIUM" => "MEDIUM",
+                        "HIGH" => "HIGH",
+                        "CRITICAL" => "CRITICAL",
+                        _ => throw new DataClassificationException(
+                            $"Invalid DataClassification Rank '{rankString}' on '{schemaName}.{tableName}.{columnName}'. " +
+                            $"Allowed values: {DataClassificationConstants.GetAllowedRanksString()}.")
+                    };
+                }
             }
+
 
             var helper = Dependencies.SqlGenerationHelper;
             var stringMapping = Dependencies.TypeMappingSource.GetMapping(typeof(string));
@@ -325,9 +334,7 @@ namespace EFCore.DataClassification.Infrastructure {
         /// Validates classification parameters: rank must be valid, label and informationType must not exceed max length.
         /// </summary>
         private static void ValidateDataClassification(string targetName,string? label,string? informationType,string? rank) {
-            label = string.IsNullOrWhiteSpace(label) ? null : label.Trim();
-            informationType = string.IsNullOrWhiteSpace(informationType) ? null : informationType.Trim();
-            rank = string.IsNullOrWhiteSpace(rank) ? null : rank.Trim();
+          
 
             if (label is null && informationType is null && rank is null)
                 return;

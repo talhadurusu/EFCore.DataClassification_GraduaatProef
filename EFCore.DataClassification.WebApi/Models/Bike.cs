@@ -12,7 +12,6 @@ namespace EFCore.DataClassification.WebApi.Models {
 
         public int GearCount { get; set; }
 
-        [DataClassification("Confidential", "Bike Serial Number", SensitivityRank.Medium)]
         public string SerialNumber { get; set; } = string.Empty;
 
         public string? Color { get; set; }

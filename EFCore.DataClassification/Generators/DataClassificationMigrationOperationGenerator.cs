@@ -25,31 +25,56 @@ namespace EFCore.DataClassification.Generators {
         }
         private void GenerateCreate(CreateDataClassificationOperation op, IndentedStringBuilder builder) {
             builder.Append(".AddDataClassification(");
+            builder.IncrementIndent();
+            builder.AppendLine();
 
-            builder.Append($"table: {Dependencies.CSharpHelper.Literal(op.Table)}, ");
+            builder.Append($"table: {Dependencies.CSharpHelper.Literal(op.Table)},");
+            builder.AppendLine();
             builder.Append($"column: {Dependencies.CSharpHelper.Literal(op.Column)}");
 
-            if (op.Schema is not null)
-                builder.Append($", schema: {Dependencies.CSharpHelper.Literal(op.Schema)}");
-            if (op.Label is not null)
-                builder.Append($", label: {Dependencies.CSharpHelper.Literal(op.Label)}");
-            if (op.InformationType is not null)
-                builder.Append($", informationType: {Dependencies.CSharpHelper.Literal(op.InformationType)}");
-            if (op.Rank is not null)
-                builder.Append($", rank: {Dependencies.CSharpHelper.Literal(op.Rank)}");
+            if (op.Schema is not null) {
+                builder.Append(",");
+                builder.AppendLine();
+                builder.Append($"schema: {Dependencies.CSharpHelper.Literal(op.Schema)}");
+            }
+            if (op.Label is not null) {
+                builder.Append(",");
+                builder.AppendLine();
+                builder.Append($"label: {Dependencies.CSharpHelper.Literal(op.Label)}");
+            }
+            if (op.InformationType is not null) {
+                builder.Append(",");
+                builder.AppendLine();
+                builder.Append($"informationType: {Dependencies.CSharpHelper.Literal(op.InformationType)}");
+            }
+            if (op.Rank is not null) {
+                builder.Append(",");
+                builder.AppendLine();
+                builder.Append($"rank: {Dependencies.CSharpHelper.Literal(op.Rank)}");
+            }
 
+            builder.DecrementIndent();
+            builder.AppendLine();
             builder.Append(")");
         }
 
         private void GenerateRemove(RemoveDataClassificationOperation op, IndentedStringBuilder builder) {
             builder.Append(".DropDataClassification(");
+            builder.IncrementIndent();
+            builder.AppendLine();
 
-            builder.Append($"table: {Dependencies.CSharpHelper.Literal(op.Table)}, ");
+            builder.Append($"table: {Dependencies.CSharpHelper.Literal(op.Table)},");
+            builder.AppendLine();
             builder.Append($"column: {Dependencies.CSharpHelper.Literal(op.Column)}");
 
-            if (op.Schema is not null)
-                builder.Append($", schema: {Dependencies.CSharpHelper.Literal(op.Schema)}");
+            if (op.Schema is not null) {
+                builder.Append(",");
+                builder.AppendLine();
+                builder.Append($"schema: {Dependencies.CSharpHelper.Literal(op.Schema)}");
+            }
 
+            builder.DecrementIndent();
+            builder.AppendLine();
             builder.Append(")");
         }
 

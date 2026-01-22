@@ -1,22 +1,16 @@
 # EFCore.DataClassification
 
-A lightweight Entity Framework Core 8 extension that seamlessly integrates SQL Server data classification (sensitivity labels) into your migration pipeline.
+Entity Framework Core 8 extension for SQL Server data classification (sensitivity labels) with automatic migration support.
 
-## 🚀 Quick Start - Get Started in 5 Minutes
+## Quick Start
 
-**"How do I add this to my project?"** Follow these quick steps:
-
-### 1. Add Project Reference
+### 1. Add Reference
 
 ```bash
-# Add the project to your solution
-dotnet sln add EFCore.DataClassification/EFCore.DataClassification.csproj
-
-# Add reference to your Web/API project
 dotnet add reference ../EFCore.DataClassification/EFCore.DataClassification.csproj
 ```
 
-### 2. Configure DbContext (Program.cs or Startup.cs)
+### 2. Configure DbContext
 
 ```csharp
 using EFCore.DataClassification.Extensions;
@@ -25,7 +19,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options
         .UseSqlServer(connectionString)
-        .UseDataClassificationSqlServer(); // Add this line
+        .UseDataClassificationSqlServer();
 });
 ```
 
@@ -35,7 +29,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     base.OnModelCreating(modelBuilder);
-    modelBuilder.UseDataClassification(); // Add this line
+    modelBuilder.UseDataClassification();
 }
 ```
 
@@ -57,7 +51,9 @@ public class Customer
 }
 ```
 
-> **Note:** The attribute parameters are: `(label, informationType, rank)`. Valid ranks: `None`, `Low`, `Medium`, `High`, `Critical`.
+**Attribute parameters:** `(label, informationType, rank)`
+
+**Valid ranks:** `None`, `Low`, `Medium`, `High`, `Critical`
 
 ### 5. Create and Apply Migration
 
@@ -66,532 +62,111 @@ dotnet ef migrations add AddDataClassification
 dotnet ef database update
 ```
 
-**That's it!** 🎉 SQL Server sensitivity classification metadata is now automatically generated.
+**Done!** SQL Server sensitivity classification metadata is automatically generated.
 
-**See the `WebApi` project for more examples.**
+## Usage
 
----
+### Using Attributes
 
-## Overview
+```csharp
+[DataClassification("Label", "Information Type", SensitivityRank.High)]
+public string Email { get; set; }
+```
 
-**EFCore.DataClassification** is a production-ready extension library for **Entity Framework Core 8** that seamlessly integrates **SQL Server data classification** (sensitivity labels) into your migration pipeline. It enables automatic generation and synchronization of sensitivity classification metadata alongside your database schema changes.
+### Using Fluent API
 
-### Key Features
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+    modelBuilder.UseDataClassification();
+    
+    modelBuilder.Entity<User>()
+        .Property(u => u.PhoneNumber)
+        .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);
+}
+```
 
-- **Declarative Configuration**: Annotate entity properties with `[DataClassification]` attributes or use Fluent API (`HasDataClassification`)
-- **Automatic SQL Generation**: Generates both native SQL Server sensitivity classification (`ADD SENSITIVITY CLASSIFICATION`) and extended properties for comprehensive metadata storage
-- **Migration-Aware**: Classification metadata automatically syncs with EF Core migrations—add, remove, or modify columns, and classification operations are generated accordingly
-- **Version Compatibility**: Automatically detects SQL Server version and adapts behavior (full support for SQL Server 2019+, extended properties only for SQL Server 2017)
-- **Validation**: Built-in validation for rank values and label lengths with clear, actionable error messages
-- **Zero Configuration**: Works out of the box with minimal setup—just add the extension and enable scanning
+## How It Works
 
-The solution also includes:
+1. **Mark properties** with `[DataClassification]` attribute or Fluent API
+2. **Model building** scans and applies annotations to EF Core metadata
+3. **Migrations** automatically generate classification operations when columns are added, removed, renamed, or altered
+4. **SQL generation** creates both:
+   - Extended properties (works on all SQL Server versions)
+   - Native sensitivity classification (SQL Server 2019+)
 
-- **`EFCore.DataClassification.Tests`** – unit and integration tests for the library.
-- **`EFCore.DataClassification.WebApi`** – a minimal ASP.NET Core Web API sample that demonstrates how to use the library in a real application.
-
----
-
-## Projects
-
-- **`EFCore.DataClassification`**
-  - Core library.
-  - Contains attributes, annotations, extensions, SQL generator, custom migration operations and model differ.
-- **`EFCore.DataClassification.Tests`**
-  - xUnit tests for attributes, extensions, SQL generator, and migration model differ.
-- **`EFCore.DataClassification.WebApi`**
-  - Example ASP.NET Core 8 Web API application.
-  - Uses SQL Server + this library to demonstrate classification on various sample entities (User, Admin, Customer, Game, Car, Bike, Home, Document).
-
----
+The library automatically handles:
+- Operation ordering (removes before drops, creates after renames/alters)
+- SQL Server version detection (adapts behavior for 2017 vs 2019+)
+- Validation (rank values, label lengths)
 
 ## Requirements
 
 - **.NET 8.0**
-- **SQL Server 2017+**:
-  - **SQL Server 2019 & Azure SQL:** Full support (Native Sensitivity Classification + Extended Properties).
-  - **SQL Server 2017:** Partial support (Extended Properties only). The library automatically detects the version and skips unsupported commands safely.
+- **SQL Server 2017+**
+  - SQL Server 2019 & Azure SQL: Full support (Native Classification + Extended Properties)
+  - SQL Server 2017: Extended Properties only (classification commands safely skipped)
 - **Entity Framework Core 8** (`Microsoft.EntityFrameworkCore.SqlServer` 8.0.22)
 
----
+## Features
 
-## Core Concepts
+- ✅ **Declarative Configuration** - Attributes or Fluent API
+- ✅ **Automatic SQL Generation** - Native classification + extended properties
+- ✅ **Migration-Aware** - Syncs with schema changes automatically
+- ✅ **Version Compatibility** - Auto-detects SQL Server version
+- ✅ **Validation** - Built-in validation with clear error messages
+- ✅ **Zero Configuration** - Works out of the box
 
-### DataClassification constants and ranks
+## Migration Operations
 
-The library defines a central set of constants and valid rank values in `DataClassificationConstants`:
+The library generates custom migration operations:
 
-- **Annotations (EF Core metadata keys)**:
-  - `DataClassification:Label`
-  - `DataClassification:InformationType`
-  - `DataClassification:Rank`
-- **Max lengths**:
-  - `MaxLabelLength = 128`
-  - `MaxInformationTypeLength = 128`
-- **Default schema**: `dbo`
-- **Allowed ranks** (maps to SQL Server ranks):
-  - `None`, `Low`, `Medium`, `High`, `Critical`
+- `AddDataClassification` - Adds classification to a column
+- `DropDataClassification` - Removes classification from a column
 
-It also exposes:
+These operations are automatically ordered correctly:
+- Remove operations run **before** column drops/renames/alters
+- Create operations run **after** column renames/alters
 
-- `IsValidRank(string? rank)` – checks if a rank is allowed.
-- `GetAllowedRanksString()` – returns allowed ranks as comma-separated string for error messages.
+## Error Handling
 
-### SensitivityRank enum
+Invalid configuration throws `DataClassificationException` with clear messages:
+- Invalid rank values
+- Label/information type too long (max 128 chars)
 
-The **`SensitivityRank`** enum lives in the `Models` folder:
+## Projects
 
-```csharp
-public enum SensitivityRank
-{
-    None,
-    Low,
-    Medium,
-    High,
-    Critical
-}
+- **`EFCore.DataClassification`** - Core library
+- **`EFCore.DataClassification.Tests`** - Test suite (55 tests)
+- **`EFCore.DataClassification.WebApi`** - Example Web API with sample entities
+
+## Example Web API
+
+The `EFCore.DataClassification.WebApi` project demonstrates:
+- Configuration in `Program.cs` and `AppDbContext`
+- Multiple entity examples (User, Admin, Customer, Game, Car, etc.)
+- API endpoints for querying classification metadata
+- Global exception handling
+
+Run the example:
+```bash
+dotnet run --project EFCore.DataClassification.WebApi
 ```
 
-This is the rank you use in attributes and Fluent API.
+## Testing
 
----
-
-## How It Works (High-Level)
-
-1. **You mark entity properties** with:
-
-   - `[DataClassification(...)]` attribute, or
-   - `HasDataClassification(...)` Fluent API.
-
-2. **Model building**:
-
-   - `ModelBuilder.UseDataClassification()` scans all entity types and their properties.
-   - For each property with `[DataClassification]`, it writes EF Core **annotations** using `DataClassificationConstants.Label`, `InformationType`, and `Rank`.
-
-3. **Migrations model differ**:
-
-   - During migrations diffing, `DataClassificationMigrationsModelDiffer` looks at column mappings and checks whether they have classification annotations.
-   - It adds custom migration operations:
-     - `CreateDataClassificationOperation`
-     - `RemoveDataClassificationOperation`
-   - It manages change detection and ordering:
-     - When a column is **dropped**, the classification remove operation is executed **before** the column drop.
-     - When a column is **renamed**, it removes classification from the old name and adds it to the new name.
-     - When a column is **altered** (type/nullability change), classification operations are ordered correctly.
-     - When classification is **added, removed, or changed**, appropriate operations are generated.
-   - Uses optimized sorting logic to ensure correct operation order for all scenarios.
-
-4. **SQL generation**:
-
-   - `DataClassificationSqlGenerator` intercepts these custom operations and:
-     - Writes **extended properties** with `sp_addextendedproperty` / `sp_dropextendedproperty` (works on all SQL Server versions).
-     - Writes **SQL Server sensitivity classification** using `ADD SENSITIVITY CLASSIFICATION ... WITH (LABEL = ..., INFORMATION_TYPE = ..., RANK = ...)`.
-     - **Automatically detects SQL Server version**: Uses `SERVERPROPERTY('ProductMajorVersion')` to check if the server supports sensitivity classification (SQL Server 2019+). On SQL Server 2017, only extended properties are written; sensitivity classification commands are safely skipped.
-   - It validates:
-     - Rank values (must be one of the allowed ranks).
-     - Label length (max 128 chars).
-   - On invalid configuration, it throws **`DataClassificationException`** with a helpful message.
-
-5. **Design-time services**:
-   - `DataClassificationDesignTimeServices` (library) and `Design` (WebApi) register:
-     - `IMigrationsCodeGenerator` as `DataClassificationMigrationsGenerator` (adds needed namespaces to generated migrations).
-     - `ICSharpMigrationOperationGenerator` as `DataClassificationMigrationOperationGenerator` (writes C# code for custom operations).
-
----
-
-## Installation & Setup
-
-### 1. Add the library to your project
-
-You can either:
-
-- **Reference the project directly** from your solution:
-  - Add the existing `EFCore.DataClassification` project to your solution.
-  - Add a Project Reference to it from your application (Web, API, etc.).
-
-Or:
-
-- **(If packaged)** add a NuGet package reference (not shown in this repo, but conceptually it would be something like `EFCore.DataClassification`).
-
-### 2. Configure DbContext options
-
-In your application (for example in `Program.cs`):
-
-```csharp
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options
-        .UseSqlServer(connectionString)
-        .UseDataClassificationSqlServer(); // <-- enables library services
-});
-```
-
-`UseDataClassificationSqlServer()`:
-
-- Registers `DataClassificationDbContextOptionsExtension`.
-- That extension wires:
-  - `IMigrationsSqlGenerator` → `DataClassificationSqlGenerator`
-  - `IMigrationsModelDiffer` → `DataClassificationMigrationsModelDiffer`
-
-### 3. Enable classification scanning in your DbContext
-
-Inside your `DbContext`:
-
-```csharp
-protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
-    base.OnModelCreating(modelBuilder);
-
-    // 1. Scan for [DataClassification] attributes
-    modelBuilder.UseDataClassification();
-
-    // 2. Optional Fluent API example
-    modelBuilder.Entity<User>()
-        .Property(u => u.PhoneNumber)
-        .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);
-}
-```
-
----
-
-## Using the Attribute
-
-### DataClassificationAttribute
-
-```csharp
-[AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-public class DataClassificationAttribute : Attribute
-{
-    public string Label { get; }
-    public string InformationType { get; }
-    public SensitivityRank Rank { get; }
-
-    public DataClassificationAttribute(string label, string informationType, SensitivityRank rank)
-    {
-        Label = label;
-        InformationType = informationType;
-        Rank = rank;
-    }
-}
-```
-
-### Example – `User` entity
-
-```csharp
-public class User
-{
-    public int Id { get; set; }
-
-    public string Name { get; set; } = string.Empty;
-
-    public string Surname { get; set; } = string.Empty;
-
-    // Attribute-based classification
-    [DataClassification("Private", "Home Address", SensitivityRank.Medium)]
-    public string Adress { get; set; } = string.Empty;
-
-    public string Email { get; set; } = string.Empty;
-
-    // Fluent API example is applied in OnModelCreating (PhoneNumber)
-
-    [DataClassification("Confidential", "Financial Information", SensitivityRank.High)]
-    public int Salary { get; set; }
-
-    [DataClassification("Confidential", "Admin Reference", SensitivityRank.High)]
-    public int? AdminId { get; set; }
-
-    public Admin? Admin { get; set; }
-}
-```
-
-Another example – `Customer`:
-
-```csharp
-public class Customer
-{
-    public int Id { get; set; }
-
-    public string Name { get; set; } = string.Empty;
-
-    [DataClassification("Contact", "Email Address", SensitivityRank.High)]
-    public string Email { get; set; } = string.Empty;
-
-    [DataClassification("Address", "Mailing Address", SensitivityRank.None)]
-    public string Address { get; set; } = string.Empty;
-}
-```
-
-After running migrations, these properties will have SQL Server sensitivity classification and extended properties attached.
-
----
-
-## Using Fluent API
-
-You can also set classification via extensions on `PropertyBuilder`:
-
-```csharp
-public static class PropertyBuilderExtensions
-{
-    public static PropertyBuilder HasDataClassification(
-        this PropertyBuilder propertyBuilder,
-        string label,
-        string informationType,
-        SensitivityRank rank)
-    { ... }
-
-    public static PropertyBuilder<TProperty> HasDataClassification<TProperty>(
-        this PropertyBuilder<TProperty> propertyBuilder,
-        string label,
-        string informationType,
-        SensitivityRank rank)
-    { ... }
-}
-```
-
-### Example – from `AppDbContext`
-
-```csharp
-protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
-    base.OnModelCreating(modelBuilder);
-
-    modelBuilder.UseDataClassification();
-
-    modelBuilder.Entity<User>()
-        .Property(u => u.PhoneNumber)
-        .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);
-}
-```
-
----
-
-## Migrations Support
-
-### Custom operations
-
-The library introduces two custom migration operations:
-
-- **`CreateDataClassificationOperation`**
-  - Used when a column with classification is added or when classification is changed.
-- **`RemoveDataClassificationOperation`**
-  - Used when classification should be removed (for example when a column is dropped, unmapped, or its classification is removed/changed).
-
-### MigrationBuilder extensions
-
-You can also **explicitly** add/remove classification in your migration code using `MigrationBuilderExtensions`:
-
-```csharp
-public static class MigrationBuilderExtensions
-{
-    public static OperationBuilder<CreateDataClassificationOperation> AddDataClassification(
-        this MigrationBuilder migrationBuilder,
-        string table,
-        string column,
-        string? schema = null,
-        string? label = null,
-        string? informationType = null,
-        string? rank = null);
-
-    public static OperationBuilder<RemoveDataClassificationOperation> DropDataClassification(
-        this MigrationBuilder migrationBuilder,
-        string table,
-        string column,
-        string? schema = null);
-}
-```
-
-This is helpful if you want **manual control** over classification operations inside a particular migration.
-
-### SQL generation details
-
-`DataClassificationSqlGenerator`:
-
-- Validates incoming data:
-  - Allowed ranks (`None`, `Low`, `Medium`, `High`, `Critical`).
-  - Label length (`<= 128`).
-- Writes **extended properties**:
-  - Uses `sys.sp_addextendedproperty` and `sys.sp_dropextendedproperty`.
-  - Properties:
-    - `DataClassification:Label`
-    - `DataClassification:InformationType`
-    - `DataClassification:Rank`
-  - **Works on all SQL Server versions** (2017+): Extended properties are always written regardless of SQL Server version.
-- Writes **sensitivity classification**:
-  - Uses `ADD SENSITIVITY CLASSIFICATION TO [schema].[table].[column] WITH (...)`.
-  - Maps rank string values to SQL Server ranks:
-    - `"Low" → "LOW"`, `"Medium" → "MEDIUM"`, `"High" → "HIGH"`, `"Critical" → "CRITICAL"`.
-  - `"None"` is treated as no sensitivity classification (no rank sent).
-  - **Version-aware execution**: The generator automatically checks SQL Server version using `SERVERPROPERTY('ProductMajorVersion')`:
-    - **SQL Server 2019+ (version 15+)**: Both extended properties AND native sensitivity classification are written.
-    - **SQL Server 2017 (version 14)**: Only extended properties are written. Sensitivity classification commands are skipped safely (wrapped in `IF TRY_CONVERT(int, SERVERPROPERTY('ProductMajorVersion')) >= 15`).
-  - This ensures migrations run successfully on both SQL Server 2017 and 2019+ without errors.
-
-If configuration is invalid, it throws `DataClassificationException` so you get a **clear, early failure**.
-
----
-
-## Web API Sample
-
-The `EFCore.DataClassification.WebApi` project demonstrates an ASP.NET Core Web API using this library.
-
-### Key parts
-
-- **`Program`**
-
-  - Configures `AppDbContext` with `.UseDataClassificationSqlServer()`.
-  - Registers a global exception handler (`GlobalExceptionHandler`).
-  - Enables Swagger/OpenAPI.
-
-- **`AppDbContext`**
-
-  - Defines multiple DbSets: `Users`, `Admins`, `Games`, `Car`, `Bikes`, `Homes`, `Customers`, `Documents`, etc.
-  - Calls `modelBuilder.UseDataClassification()` in `OnModelCreating`.
-  - Configures one property (`User.PhoneNumber`) via Fluent API `HasDataClassification`.
-
-- **Models**
-
-  - `User`, `Customer`, `Admin`, `Game`, `Car`, `Bike`, `Home`, `Document`, etc.
-  - Several properties are decorated with `[DataClassification]` to show different scenarios.
-
-- **Controllers**
-
-  - `DataClassificationController`:
-    - Query classification metadata from SQL Server (`GET /api/DataClassification/metadata`).
-    - Export metadata as CSV or JSON (`GET /api/DataClassification/metadata/export/csv`, `/export/json`).
-    - Filter by rank, information type, or table name.
-    - Get classification summary statistics.
-    - Query extended properties as fallback.
-
-- **Middleware**
-
-  - `GlobalExceptionHandler`:
-    - Implements `.NET 8 IExceptionHandler` pattern.
-    - Maps:
-      - `DataClassificationException` → 400 Bad Request with specific error details.
-      - `ArgumentNullException` → 400 Bad Request.
-      - `InvalidOperationException` → 409 Conflict.
-      - Any other exception → 500 Internal Server Error.
-
-- **Design-time**
-  - `Design` class registers the design-time services for migrations generator and operation generator so that `dotnet ef` commands produce migrations that understand the custom operations.
-
-### Running the Web API
-
-1. Configure a valid **SQL Server connection string** in `appsettings.json` (e.g. `DefaultConnection`).
-2. Run migrations, for example:
-   ```bash
-   dotnet ef database update --project EFCore.DataClassification.WebApi
-   ```
-3. Start the API:
-   ```bash
-   dotnet run --project EFCore.DataClassification.WebApi
-   ```
-4. Open Swagger UI (usually at `https://localhost:{port}/swagger`) and test endpoints like:
-   - `GET /api/DataClassification/metadata` - Get all classification metadata
-   - `GET /api/DataClassification/metadata/export/csv` - Export as CSV
-   - `GET /api/DataClassification/metadata/export/json` - Export as JSON
-   - `GET /api/DataClassification/metadata/by-rank/{rank}` - Filter by sensitivity rank
-   - `GET /api/DataClassification/metadata/summary` - Get summary statistics
-
----
-
-## Tests
-
-The `EFCore.DataClassification.Tests` project includes **55 comprehensive tests** covering:
-
-- **Attributes** – e.g. `DataClassificationAttributeTests` confirms:
-  - Properties set correctly.
-  - Attribute is applicable to properties only.
-  - `AllowMultiple = false`.
-- **Extensions** – tests for:
-  - `ModelBuilderExtensions.UseDataClassification()` – annotations applied correctly.
-  - `PropertyBuilderExtensions.HasDataClassification()` – annotation-based configuration works.
-  - `MigrationBuilderExtensions` – custom operations are added correctly.
-- **Infrastructure**:
-  - `DataClassificationMigrationsModelDiffer`:
-    - Adds `CreateDataClassificationOperation` for new classified columns.
-    - Adds `RemoveDataClassificationOperation` for removed/changed classification.
-    - **Critical ordering tests** (`CriticalOrderingTests`): Bug-catcher style tests that verify:
-      - `RemoveDataClassification` comes **before** `DropColumn` operations.
-      - `RemoveDataClassification` comes **before** `RenameColumn` operations.
-      - `CreateDataClassification` comes **after** `RenameColumn` operations.
-      - `RemoveDataClassification` comes **before** `AlterColumn` operations.
-      - `CreateDataClassification` comes **after** `AlterColumn` operations.
-    - **Edge case tests** (`DataClassificationMigrationsModelDifferEdgeCasesTests`):
-      - Columns without classification don't generate operations.
-      - Mixed scenarios (some classified, some not).
-      - Validation for label/information type length limits.
-    - **Missing critical tests** (`MissingCriticalTests`):
-      - Multiple column drops with correct ordering.
-      - Mixed operations (drop, rename, alter) with correct ordering.
-      - Custom schema handling.
-      - Schema equivalence (null vs "dbo").
-  - `DataClassificationSqlGeneratorTests`:
-    - Generated SQL for extended properties and sensitivity classification.
-    - SQL Server version detection and conditional execution.
-- **Integration tests**:
-  - Verify end-to-end behavior from model configuration to generated migrations and SQL.
-  - Test real-world scenarios with multiple models and complex schema changes.
-
-**Test Philosophy**: The test suite emphasizes **bug-catcher style tests** that explicitly verify operation ordering and edge cases. These tests are designed to fail immediately if the sorting logic or operation generation is incorrect, ensuring reliability and maintainability.
-
-To run tests:
-
+Run tests:
 ```bash
 dotnet test
 ```
 
----
-
-## Error Handling and Validation
-
-When classification configuration is invalid, the library throws **`DataClassificationException`**:
-
-- Used in `DataClassificationSqlGenerator.ValidateDataClassification(...)`.
-- Scenarios:
-  - Rank not in allowed set.
-  - Label too long.
-
-In the Web API sample:
-
-- `GlobalExceptionHandler` catches `DataClassificationException` and returns a 400 Bad Request with a clear error message.
-- In development, additional details may also be exposed for other exception types.
-
----
-
-## Code Quality & Performance
-
-The library has been optimized for maintainability and performance:
-
-- **Optimized sorting logic**: Refactored operation sorting to use a single pass with pattern matching, ensuring correct order for all column operations (drop, rename, alter).
-- **Conditional allocations**: HashSet collections are only created when needed (e.g., when rename operations exist).
-- **Code deduplication**: Helper methods (`AddCreateOperationIfNeeded`, `AddRemoveOperationIfNeeded`) eliminate code duplication.
-- **XML documentation**: Key methods include comprehensive XML documentation for better IntelliSense support.
-- **Comprehensive test coverage**: 55 tests including bug-catcher style tests that verify critical operation ordering.
-
----
-
-## Summary
-
-**EFCore.DataClassification** is a focused EF Core 8 extension that:
-
-- Adds an intuitive attribute + Fluent API for **data classification**.
-- Integrates tightly with **EF Core migrations** and **SQL Server sensitivity classification**.
-- Includes a ready-to-run **Web API example** and a comprehensive **test suite** (55 tests).
-- Provides **validation and clear error messages** through `DataClassificationException`.
-- Ensures **correct operation ordering** for all migration scenarios (add, remove, rename, alter columns).
-- Optimized for **performance and maintainability** with clean, well-documented code.
-
----
+Test suite includes:
+- Attribute and extension tests
+- SQL generator tests
+- Migration model differ tests (ordering, edge cases)
+- Integration tests
 
 ## License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-You are free to:
-
-- ✅ Use commercially
-- ✅ Modify
-- ✅ Distribute
-- ✅ Private use
-- ✅ Sublicense
+MIT License

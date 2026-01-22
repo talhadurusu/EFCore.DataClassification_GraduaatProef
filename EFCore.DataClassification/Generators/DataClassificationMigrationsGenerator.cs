@@ -12,7 +12,6 @@ namespace EFCore.DataClassification.Generators {
         protected override IEnumerable<string> GetNamespaces(IEnumerable<MigrationOperation> operations) =>
             base.GetNamespaces(operations)
                 .Concat(new[] {
-                    "EFCore.DataClassification.Operations",
                     "EFCore.DataClassification.Extensions"
                 });
     }

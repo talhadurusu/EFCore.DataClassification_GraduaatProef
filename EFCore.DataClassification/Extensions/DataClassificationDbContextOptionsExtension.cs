@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using EFCore.DataClassification.Infrastructure;
-using System.Collections.Generic;
 
 namespace EFCore.DataClassification.Extensions {
     public class DataClassificationDbContextOptionsExtension : IDbContextOptionsExtension {

@@ -5,22 +5,23 @@ namespace EFCore.DataClassification.WebApi.Models {
     public class Home {
         public int Id { get; set; }
 
-      
-        [DataClassification("Location", "Home Address", SensitivityRank.Low)]
-        public string Address { get; set; } = string.Empty;
+      // rename
+        [DataClassification("Location", "Home Address Updated", SensitivityRank.High)]
+        public string Evadress { get; set; } = string.Empty;
 
-     
-        [DataClassification("Property", "Home SIZE", SensitivityRank.Low)]
+        //deleteS
         public int Size { get; set; }
 
-      
-        [DataClassification("Prive", "Home Owner Name", SensitivityRank.Medium)]
+        //change
+        [DataClassification("public", "Owner Name", SensitivityRank.High)]
         public string OwnerName { get; set; } = string.Empty;
 
-       
+        //dropp
 
-        public decimal Price { get; set; }
 
+
+        //add
+        [DataClassification("public", "Year Built", SensitivityRank.Low)]
         public int YearBuilt { get; set; }
     }
 }

@@ -1,12 +1,7 @@
 ﻿using EFCore.DataClassification.Annotations;
 using EFCore.DataClassification.Attributes;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EFCore.DataClassification.Extensions {
     public static class ModelBuilderExtensions {
