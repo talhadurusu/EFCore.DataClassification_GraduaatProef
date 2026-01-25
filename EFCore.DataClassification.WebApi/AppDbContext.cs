@@ -12,11 +12,6 @@ public class AppDbContext : DbContext {
     public DbSet<User> Users { get; set; }
     public DbSet<Admin> Admins { get; set; }
     public DbSet<Game> Games { get; set; }
-    public DbSet<Car> Car { get; set; }
-    public DbSet<Bike> Bikes { get; set; }
-    public DbSet<Home> Homes { get; set; }
-    public DbSet<Customer> Customers { get; set; }
-    public DbSet<Document> Documents { get; set; }
 
 
 
@@ -30,5 +25,18 @@ public class AppDbContext : DbContext {
         modelBuilder.Entity<User>()
             .Property(u => u.PhoneNumber)
             .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);
+
+        // 3. Relationship configurations
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Admin)
+            .WithMany(a => a.Users)
+            .HasForeignKey(u => u.AdminId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Game>()
+            .HasOne(g => g.User)
+            .WithMany(u => u.Games)
+            .HasForeignKey(g => g.UserId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

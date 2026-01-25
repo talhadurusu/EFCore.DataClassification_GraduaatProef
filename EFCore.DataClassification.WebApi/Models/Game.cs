@@ -26,5 +26,8 @@ namespace EFCore.DataClassification.WebApi.Models {
         public int ReleaseYear { get; set; }
 
         public bool IsMultiplayer { get; set; }
+
+        public int? UserId { get; set; }
+        public User? User { get; set; }
     }
 }
