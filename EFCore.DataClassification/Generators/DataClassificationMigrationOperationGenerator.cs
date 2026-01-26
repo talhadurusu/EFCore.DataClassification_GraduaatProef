@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore.Migrations.Design;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
 namespace EFCore.DataClassification.Generators {
+
+    
     public sealed class DataClassificationMigrationOperationGenerator : CSharpMigrationOperationGenerator {
         public DataClassificationMigrationOperationGenerator(
             CSharpMigrationOperationGeneratorDependencies dependencies)

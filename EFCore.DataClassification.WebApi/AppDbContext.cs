@@ -22,9 +22,9 @@ public class AppDbContext : DbContext {
         modelBuilder.UseDataClassification();
 
         // 2. Fluent API configuration example
-        modelBuilder.Entity<User>()
-            .Property(u => u.PhoneNumber)
-            .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);
+        //modelBuilder.Entity<User>()
+        //    .Property(u => u.PhoneNumber)
+        //    .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);
 
         // 3. Relationship configurations
         modelBuilder.Entity<User>()
