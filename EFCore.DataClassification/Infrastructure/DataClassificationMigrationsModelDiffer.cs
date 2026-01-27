@@ -181,7 +181,7 @@ namespace EFCore.DataClassification.Infrastructure {
                 var remove = sorted[removeIdx];
                 sorted.RemoveAt(removeIdx);
                 sorted.Insert(targetIdx, remove);
-                targetIdx++; // Adjust target index since we inserted before it
+                targetIdx++; 
             }
         }
 

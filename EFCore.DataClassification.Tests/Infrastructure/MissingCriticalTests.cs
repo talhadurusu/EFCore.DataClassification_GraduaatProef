@@ -37,7 +37,6 @@ public class MissingCriticalTests {
 
     #region Test Models
 
-    // Multiple columns with classification
     private class Ctx_MultipleClassifiedColumns : DbContext {
         public Ctx_MultipleClassifiedColumns(DbContextOptions options) : base(options) { }
         public DbSet<User> Users { get; set; } = null!;
@@ -55,7 +54,6 @@ public class MissingCriticalTests {
         protected override void OnModelCreating(ModelBuilder mb) => mb.UseDataClassification();
     }
 
-    // All columns dropped
     private class Ctx_AllColumnsDropped : DbContext {
         public Ctx_AllColumnsDropped(DbContextOptions options) : base(options) { }
         public DbSet<User> Users { get; set; } = null!;
@@ -67,21 +65,16 @@ public class MissingCriticalTests {
         protected override void OnModelCreating(ModelBuilder mb) => mb.UseDataClassification();
     }
 
-    // Multiple operations on same table
     private class Ctx_MixedOperations : DbContext {
         public Ctx_MixedOperations(DbContextOptions options) : base(options) { }
         public DbSet<User> Users { get; set; } = null!;
 
         public class User {
             public int Id { get; set; }
-            // Email renamed to EmailAddress
             [DataClassification("PII", "Email", SensitivityRank.Medium)]
             public string EmailAddress { get; set; } = "";
-            // Phone altered (nullable)
             [DataClassification("PII", "Phone", SensitivityRank.Medium)]
             public string? Phone { get; set; }
-            // SSN dropped
-            // New column added
             [DataClassification("PII", "Address", SensitivityRank.Low)]
             public string Address { get; set; } = "";
         }
@@ -89,7 +82,6 @@ public class MissingCriticalTests {
         protected override void OnModelCreating(ModelBuilder mb) => mb.UseDataClassification();
     }
 
-    // Non-default schema
     private class Ctx_CustomSchema : DbContext {
         public Ctx_CustomSchema(DbContextOptions options) : base(options) { }
         public DbSet<Product> Products { get; set; } = null!;
@@ -125,7 +117,7 @@ public class MissingCriticalTests {
         // Act
         var operations = differ.GetDifferences(sourceModel, targetModel).ToList();
 
-        // Assert - Find all drop operations
+        // Assert
         var emailRemove = operations.OfType<RemoveDataClassificationOperation>()
             .SingleOrDefault(op => op.Column == "Email");
         var phoneRemove = operations.OfType<RemoveDataClassificationOperation>()
@@ -173,8 +165,7 @@ public class MissingCriticalTests {
         // Act
         var operations = differ.GetDifferences(sourceModel, targetModel).ToList();
 
-        // Assert - Find operations
-        // Email renamed to EmailAddress
+        // Assert
         var emailRemove = operations.OfType<RemoveDataClassificationOperation>()
             .SingleOrDefault(op => op.Column == "Email");
         var emailRename = operations.OfType<RenameColumnOperation>()
@@ -182,7 +173,6 @@ public class MissingCriticalTests {
         var emailCreate = operations.OfType<CreateDataClassificationOperation>()
             .SingleOrDefault(op => op.Column == "EmailAddress");
 
-        // Phone altered (nullable)
         var phoneRemove = operations.OfType<RemoveDataClassificationOperation>()
             .SingleOrDefault(op => op.Column == "Phone");
         var phoneAlter = operations.OfType<AlterColumnOperation>()
@@ -190,19 +180,16 @@ public class MissingCriticalTests {
         var phoneCreate = operations.OfType<CreateDataClassificationOperation>()
             .SingleOrDefault(op => op.Column == "Phone");
 
-        // SSN dropped
         var ssnRemove = operations.OfType<RemoveDataClassificationOperation>()
             .SingleOrDefault(op => op.Column == "SSN");
         var ssnDrop = operations.OfType<DropColumnOperation>()
             .SingleOrDefault(op => op.Name == "SSN");
 
-        // Address added
         var addressAdd = operations.OfType<AddColumnOperation>()
             .SingleOrDefault(op => op.Name == "Address");
         var addressCreate = operations.OfType<CreateDataClassificationOperation>()
             .SingleOrDefault(op => op.Column == "Address");
 
-        // CRITICAL: Check all orderings
         if (emailRemove != null && emailRename != null && emailCreate != null) {
             var removeIdx = operations.IndexOf(emailRemove);
             var renameIdx = operations.IndexOf(emailRename);
@@ -268,10 +255,7 @@ public class MissingCriticalTests {
     /// </summary>
     [Fact]
     public void BugCatcher_SchemaEquivalence_NullAndDboAreSame() {
-        // This test verifies that operations with schema=null and schema="dbo"
-        // are treated as equivalent and don't generate duplicate operations
-        
-        // Arrange - Create two contexts with same table, one with explicit dbo, one without
+        // Arrange
         using var ctx1 = CreateCtx<Ctx_MultipleClassifiedColumns>();
         using var ctx2 = CreateCtx<Ctx_MultipleClassifiedColumns>();
         
@@ -282,7 +266,7 @@ public class MissingCriticalTests {
         // Act
         var operations = differ.GetDifferences(model1, model2).ToList();
 
-        // Assert - Should be no operations since models are identical
+        // Assert
         var classificationOps = operations
             .Where(op => op is CreateDataClassificationOperation or RemoveDataClassificationOperation)
             .ToList();

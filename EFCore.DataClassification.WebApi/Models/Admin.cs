@@ -9,16 +9,16 @@ namespace EFCore.DataClassification.WebApi.Models {
 
         public string LastName { get; set; } = string.Empty;
 
-        [DataClassification("Confidential", "Email Address", SensitivityRank.Medium)]
+       // [DataClassification("Confidential", "Email Address", SensitivityRank.Medium)]
         public string? Email { get; set; }
 
-        [DataClassification("Confidential", "Phone Number", SensitivityRank.Low)]
+       // [DataClassification("Confidential", "Phone Number", SensitivityRank.Low)]
         public string Phoneno { get; set; } = string.Empty;
 
-        [DataClassification("Confidential", "Inscription Number", SensitivityRank.High)]
+      //  [DataClassification("Confidential", "Inscription Number", SensitivityRank.High)]
         public string InscriptionNo { get; set; } = string.Empty;
 
-        [DataClassification("Internal", "Notes about the admin", SensitivityRank.Low)]
+      //  [DataClassification("Internal", "Notes about the admin", SensitivityRank.Low)]
         public string? Notes { get; set; }
 
        

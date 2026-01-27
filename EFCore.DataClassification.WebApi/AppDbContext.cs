@@ -18,15 +18,16 @@ public class AppDbContext : DbContext {
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
 
-        // 1. Scan and apply DataClassification attributes
+       
         modelBuilder.UseDataClassification();
 
-        // 2. Fluent API configuration example
+        // 2. Fluent API configuration 
         //modelBuilder.Entity<User>()
         //    .Property(u => u.PhoneNumber)
         //    .HasDataClassification("Internal", "Phone Number", SensitivityRank.High);
 
-        // 3. Relationship configurations
+
+        //  Relationship configurations
         modelBuilder.Entity<User>()
             .HasOne(u => u.Admin)
             .WithMany(a => a.Users)
